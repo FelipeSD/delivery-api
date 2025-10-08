@@ -1,0 +1,210 @@
+package com.deliverytech.delivery_api.config;
+
+import java.math.BigDecimal;
+import java.util.Arrays;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.stereotype.Component;
+
+import com.deliverytech.delivery_api.entities.Cliente;
+import com.deliverytech.delivery_api.entities.Pedido;
+import com.deliverytech.delivery_api.entities.Restaurante;
+import com.deliverytech.delivery_api.repositories.ClienteRepository;
+import com.deliverytech.delivery_api.repositories.PedidoRepository;
+import com.deliverytech.delivery_api.repositories.ProdutoRepository;
+import com.deliverytech.delivery_api.repositories.RestauranteRepository;
+
+@Component
+public class DataLoader implements CommandLineRunner {
+  @Autowired
+  private ClienteRepository clienteRepository;
+
+  @Autowired
+  private RestauranteRepository restauranteRepository;
+  @Autowired
+  private ProdutoRepository produtoRepository;
+  @Autowired
+  private PedidoRepository pedidoRepository;
+
+  @Override
+  public void run(String... args) throws Exception {
+    System.out.println("=== INICIANDO CARGA DE DADOS DE TESTE ===");
+    // Limpar dados existentes
+    pedidoRepository.deleteAll();
+    produtoRepository.deleteAll();
+    restauranteRepository.deleteAll();
+    clienteRepository.deleteAll();
+    // Inserir dados de teste
+    inserirClientes();
+    inserirRestaurantes();
+    inserirProdutos();
+    inserirPedidos();
+    // Executar testes das consultas
+    testarConsultas();
+    System.out.println("=== CARGA DE DADOS CONCLUÍDA ===");
+  }
+
+  private void inserirClientes() {
+    System.out.println("--- Inserindo Clientes ---");
+    Cliente cliente1 = new Cliente();
+    cliente1.setNome("João Silva");
+    cliente1.setEmail("joao@email.com");
+    cliente1.setTelefone("11999999999");
+    cliente1.setEndereco("Rua A, 123");
+    cliente1.setAtivo(true);
+    Cliente cliente2 = new Cliente();
+    cliente2.setNome("Maria Santos");
+    cliente2.setEmail("maria@email.com");
+    cliente2.setTelefone("11888888888");
+    cliente2.setEndereco("Rua B, 456");
+    cliente2.setAtivo(true);
+    Cliente cliente3 = new Cliente();
+    cliente3.setNome("Pedro Oliveira");
+    cliente3.setEmail("pedro@email.com");
+    cliente3.setTelefone("11777777777");
+    cliente3.setEndereco("Rua C, 789");
+    cliente3.setAtivo(false);
+    clienteRepository.saveAll(Arrays.asList(cliente1, cliente2, cliente3));
+    System.out.println("✓ 3 clientes inseridos");
+  }
+
+  private void inserirRestaurantes() {
+    System.out.println("--- Inserindo Restaurantes ---");
+    Restaurante restaurante1 = new Restaurante();
+    restaurante1.setNome("Pizza Express");
+    restaurante1.setCategoria("Italiana");
+    restaurante1.setEndereco("Av. Principal, 100");
+    restaurante1.setTelefone("1133333333");
+    restaurante1.setTaxaEntrega(new BigDecimal("3.50"));
+    restaurante1.setAtivo(true);
+    Restaurante restaurante2 = new Restaurante();
+    restaurante2.setNome("Burger King");
+    restaurante2.setCategoria("Fast Food");
+    restaurante2.setEndereco("Rua Central, 200");
+    restaurante2.setTelefone("1144444444");
+    restaurante2.setTaxaEntrega(new BigDecimal("5.00"));
+    restaurante2.setAtivo(true);
+    restauranteRepository.saveAll(Arrays.asList(restaurante1, restaurante2));
+    System.out.println("✓ 2 restaurantes inseridos");
+  }
+
+  private void inserirProdutos() {
+    System.out.println("--- Inserindo Produtos ---");
+    var restaurantes = restauranteRepository.findAll();
+    if (restaurantes.size() < 2) {
+      System.out.println("Erro: Não há restaurantes suficientes para inserir produtos.");
+      return;
+    }
+    Restaurante restaurante1 = restaurantes.get(0);
+    Restaurante restaurante2 = restaurantes.get(1);
+    var produto1 = new com.deliverytech.delivery_api.entities.Produto();
+    produto1.setNome("Pizza Margherita");
+    produto1.setDescricao("Deliciosa pizza com molho de tomate, mussarela e manjericão.");
+    produto1.setPreco(new BigDecimal("25.00"));
+    produto1.setCategoria("Pizza");
+    produto1.setDisponivel(true);
+    produto1.setRestaurante(restaurante1);
+    var produto2 = new com.deliverytech.delivery_api.entities.Produto();
+    produto2.setNome("Hambúrguer Clássico");
+    produto2.setDescricao("Hambúrguer com carne bovina, queijo, alface, tomate e maionese.");
+    produto2.setPreco(new BigDecimal("15.00"));
+    produto2.setCategoria("Hambúrguer");
+    produto2.setDisponivel(true);
+    produto2.setRestaurante(restaurante2);
+    var produto3 = new com.deliverytech.delivery_api.entities.Produto();
+    produto3.setNome("Batata Frita");
+    produto3.setDescricao("Porção de batatas fritas crocantes.");
+    produto3.setPreco(new BigDecimal("8.00"));
+    produto3.setCategoria("Acompanhamento");
+    produto3.setDisponivel(true);
+    produto3.setRestaurante(restaurante2);
+    produtoRepository.saveAll(Arrays.asList(produto1, produto2, produto3));
+    System.out.println("✓ 3 produtos inseridos");
+  }
+
+  private void inserirPedidos() {
+    System.out.println("--- Inserindo Pedidos ---");
+    var clientes = clienteRepository.findAll();
+    var produtos = produtoRepository.findAll();
+    var restaurantes = restauranteRepository.findAll();
+    if (clientes.isEmpty() || produtos.isEmpty() || restaurantes.isEmpty()) {
+      System.out.println("Erro: Dados insuficientes para inserir pedidos.");
+      return;
+    }
+    var pedido1 = new Pedido();
+    pedido1.setNumeroPedido("PED001");
+    pedido1.setCliente(clientes.get(0));
+    pedido1.setRestaurante(restaurantes.get(0));
+    pedido1.setValorTotal(new BigDecimal("28.50"));
+    pedido1.setStatus(com.deliverytech.delivery_api.enums.StatusPedido.PENDENTE);
+    var pedido2 = new Pedido();
+    pedido2.setNumeroPedido("PED002");
+    pedido2.setCliente(clientes.get(1));
+    pedido2.setRestaurante(restaurantes.get(1));
+    pedido2.setValorTotal(new BigDecimal("23.00"));
+    pedido2.setStatus(com.deliverytech.delivery_api.enums.StatusPedido.CONFIRMADO);
+    pedidoRepository.saveAll(Arrays.asList(pedido1, pedido2));
+    System.out.println("✓ 2 pedidos inseridos");
+  }
+
+  private void testarConsultas() {
+    System.out.println("\n=== TESTANDO CONSULTAS DOS REPOSITORIES ===");
+    // Teste ClienteRepository
+    System.out.println("\n--- Testes ClienteRepository ---");
+    var clientePorEmail = clienteRepository.findByEmail("joao@email.com");
+    System.out.println("Cliente por email: " +
+        (clientePorEmail.isPresent() ? clientePorEmail.get().getNome() : "Não encontrado"));
+    var clientesAtivos = clienteRepository.findByAtivoTrue();
+    System.out.println("Clientes ativos: " + clientesAtivos.size());
+    var clientesPorNome = clienteRepository.findByNomeContainingIgnoreCase("silva");
+    System.out.println("Clientes com 'silva' no nome: " + clientesPorNome.size());
+    boolean emailExiste = clienteRepository.existsByEmail("maria@email.com");
+    System.out.println("Email maria@email.com existe: " + emailExiste);
+    // ... continuar com outros testes
+
+    // Teste RestauranteRepository
+    System.out.println("\n--- Testes RestauranteRepository ---");
+    var restaurantePorNome = restauranteRepository.findByNome("Pizza Express");
+    System.out.println("Restaurante por nome: " +
+        (restaurantePorNome.isPresent() ? restaurantePorNome.get().getNome() : "Não encontrado"));
+    var restaurantesAtivos = restauranteRepository.findByAtivoTrue();
+    System.out.println("Restaurantes ativos: " + restaurantesAtivos.size());
+    var restaurantesPorCategoria = restauranteRepository.findByCategoriaAndAtivoTrue("Fast Food");
+    System.out.println("Restaurantes na categoria 'Fast Food': " + restaurantesPorCategoria.size());
+    var restaurantesPorAvaliacao = restauranteRepository
+        .findByAvaliacaoGreaterThanEqualAndAtivoTrue(new BigDecimal("4.0"));
+    System.out.println("Restaurantes com avaliação >= 4.0: " + restaurantesPorAvaliacao.size());
+
+    var top5Restaurantes = restauranteRepository.findTop5ByOrderByNomeAsc();
+    System.out.println("Top 5 restaurantes por nome:");
+    top5Restaurantes.forEach(r -> System.out.println(" - " + r.getNome()));
+
+    // Teste ProdutoRepository
+    System.out.println("\n--- Testes ProdutoRepository ---");
+    var produtosPorNome = produtoRepository.findByNomeContainingIgnoreCaseAndDisponivelTrue("pizza");
+    System.out.println("Produtos com 'pizza' no nome: " + produtosPorNome.size());
+    var produtosPorCategoria = produtoRepository.findByCategoriaAndDisponivelTrue("Hambúrguer");
+    System.out.println("Produtos na categoria 'Hambúrguer': " + produtosPorCategoria.size());
+
+    // Teste PedidoRepository
+    System.out.println("\n--- Testes PedidoRepository ---");
+    var pedidosPorCliente = pedidoRepository.findByClienteIdOrderByDataPedidoDesc(1L);
+    System.out.println("Pedidos do cliente ID 1: " + pedidosPorCliente.size());
+    var pedidosPendentes = pedidoRepository.findPedidosPendentes();
+    System.out.println("Pedidos pendentes: " + pedidosPendentes.size());
+    var vendasPorRestaurante = pedidoRepository.calcularTotalVendasPorRestaurante();
+    System.out.println("Total de vendas por restaurante:");
+    vendasPorRestaurante.forEach(v -> System.out.println(" - " + v[0] + ": R$ " + v[1]));
+
+    // Relatório de vendas por restaurante
+    var relatorioVendas = restauranteRepository.relatorioVendasPorRestaurante();
+    System.out.println("\nRelatório de Vendas por Restaurante:");
+    relatorioVendas.forEach(r -> System.out.println(" - " + r.getNomeRestaurante() +
+        ": R$ " + r.getTotalVendas() + " em " + r.getQuantidadePedidos() + " pedidos"));
+
+    var produtosMaisVendidos = produtoRepository.produtosMaisVendidos();
+    System.out.println("Produtos mais vendidos:");
+    produtosMaisVendidos.forEach(p -> System.out.println(" - " + p[0] + ": " + p[1] + " vendidos"));
+  }
+}

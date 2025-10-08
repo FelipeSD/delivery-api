@@ -46,7 +46,7 @@ public class ClienteController {
   }
 
   /**
-   * Listar todos os clientes a vos
+   * Listar todos os clientes ativos
    */
   @GetMapping
   public ResponseEntity<List<Cliente>> listar() {
@@ -88,7 +88,7 @@ public class ClienteController {
   }
 
   /**
-   * Inativar cliente (so delete)
+   * Inativar cliente (soft delete)
    */
   @DeleteMapping("/{id}")
   public ResponseEntity<?> inativar(@PathVariable Long id) {

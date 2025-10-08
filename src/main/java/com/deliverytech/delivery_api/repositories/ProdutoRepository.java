@@ -6,10 +6,11 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import com.deliverytech.delivery_api.entities.Produto;
 import com.deliverytech.delivery_api.entities.Restaurante;
-
+@Repository
 public interface ProdutoRepository extends JpaRepository<Produto, Long> {
   // Buscar produtos por restaurante
   List<Produto> findByRestauranteAndDisponivelTrue(Restaurante restaurante);
@@ -28,6 +29,9 @@ public interface ProdutoRepository extends JpaRepository<Produto, Long> {
 
   // Buscar produtos mais baratos que um valor
   List<Produto> findByPrecoLessThanEqualAndDisponivelTrue(BigDecimal preco);
+
+  // Por faixa de preço (menor ou igual)
+  List<Produto> findByPrecoLessThanEqual(BigDecimal preco);
 
   // Ordenar por preço
   List<Produto> findByDisponivelTrueOrderByPrecoAsc();
@@ -48,4 +52,12 @@ public interface ProdutoRepository extends JpaRepository<Produto, Long> {
   // Contar produtos por restaurante
   @Query("SELECT COUNT(p) FROM Produto p WHERE p.restaurante.id = :restauranteId AND p.disponivel = true")
   Long countByRestauranteId(@Param("restauranteId") Long restauranteId);
+
+  @Query(value = "SELECT p.nome, COUNT(ip.produto_id) as quantidade_vendida " +
+      "FROM produto p " +
+      "LEFT JOIN item_pedido ip ON p.id = ip.produto_id " +
+      "GROUP BY p.id, p.nome " +
+      "ORDER BY quantidade_vendida DESC " +
+      "LIMIT 5", nativeQuery = true)
+  List<Object[]> produtosMaisVendidos();
 }
