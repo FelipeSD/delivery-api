@@ -51,8 +51,8 @@ public interface RestauranteRepository extends JpaRepository<Restaurante, Long> 
 
   // No RestauranteRepository:
   @Query("SELECT r.nome as nomeRestaurante, " +
-      "SUM(p.valorTotal) as totalVendas, " +
-      "COUNT(p.id) as quantidePedidos " +
+      "COALESCE(SUM(p.valorTotal), 0) as totalVendas, " +
+      "COUNT(p.id) as quantidadePedidos " +
       "FROM Restaurante r " +
       "LEFT JOIN Pedido p ON r.id = p.restaurante.id " +
       "GROUP BY r.id, r.nome")

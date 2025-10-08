@@ -8,8 +8,11 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import com.deliverytech.delivery_api.entities.Cliente;
+import com.deliverytech.delivery_api.entities.ItemPedido;
 import com.deliverytech.delivery_api.entities.Pedido;
+import com.deliverytech.delivery_api.entities.Produto;
 import com.deliverytech.delivery_api.entities.Restaurante;
+import com.deliverytech.delivery_api.enums.StatusPedido;
 import com.deliverytech.delivery_api.repositories.ClienteRepository;
 import com.deliverytech.delivery_api.repositories.PedidoRepository;
 import com.deliverytech.delivery_api.repositories.ProdutoRepository;
@@ -19,7 +22,6 @@ import com.deliverytech.delivery_api.repositories.RestauranteRepository;
 public class DataLoader implements CommandLineRunner {
   @Autowired
   private ClienteRepository clienteRepository;
-
   @Autowired
   private RestauranteRepository restauranteRepository;
   @Autowired
@@ -66,7 +68,8 @@ public class DataLoader implements CommandLineRunner {
     cliente3.setEndereco("Rua C, 789");
     cliente3.setAtivo(false);
     clienteRepository.saveAll(Arrays.asList(cliente1, cliente2, cliente3));
-    System.out.println("✓ 3 clientes inseridos");
+    var quantidadeClientes = clienteRepository.count();
+    System.out.println("✓ " + quantidadeClientes + " clientes inseridos");
   }
 
   private void inserirRestaurantes() {
@@ -84,9 +87,11 @@ public class DataLoader implements CommandLineRunner {
     restaurante2.setEndereco("Rua Central, 200");
     restaurante2.setTelefone("1144444444");
     restaurante2.setTaxaEntrega(new BigDecimal("5.00"));
+    restaurante2.setAvaliacao(4.2);
     restaurante2.setAtivo(true);
     restauranteRepository.saveAll(Arrays.asList(restaurante1, restaurante2));
-    System.out.println("✓ 2 restaurantes inseridos");
+    var quantidadeRestaurantes = restauranteRepository.count();
+    System.out.println("✓ " + quantidadeRestaurantes + " restaurantes inseridos");
   }
 
   private void inserirProdutos() {
@@ -98,21 +103,21 @@ public class DataLoader implements CommandLineRunner {
     }
     Restaurante restaurante1 = restaurantes.get(0);
     Restaurante restaurante2 = restaurantes.get(1);
-    var produto1 = new com.deliverytech.delivery_api.entities.Produto();
+    var produto1 = new Produto();
     produto1.setNome("Pizza Margherita");
     produto1.setDescricao("Deliciosa pizza com molho de tomate, mussarela e manjericão.");
     produto1.setPreco(new BigDecimal("25.00"));
     produto1.setCategoria("Pizza");
     produto1.setDisponivel(true);
     produto1.setRestaurante(restaurante1);
-    var produto2 = new com.deliverytech.delivery_api.entities.Produto();
+    var produto2 = new Produto();
     produto2.setNome("Hambúrguer Clássico");
     produto2.setDescricao("Hambúrguer com carne bovina, queijo, alface, tomate e maionese.");
     produto2.setPreco(new BigDecimal("15.00"));
     produto2.setCategoria("Hambúrguer");
     produto2.setDisponivel(true);
     produto2.setRestaurante(restaurante2);
-    var produto3 = new com.deliverytech.delivery_api.entities.Produto();
+    var produto3 = new Produto();
     produto3.setNome("Batata Frita");
     produto3.setDescricao("Porção de batatas fritas crocantes.");
     produto3.setPreco(new BigDecimal("8.00"));
@@ -120,7 +125,8 @@ public class DataLoader implements CommandLineRunner {
     produto3.setDisponivel(true);
     produto3.setRestaurante(restaurante2);
     produtoRepository.saveAll(Arrays.asList(produto1, produto2, produto3));
-    System.out.println("✓ 3 produtos inseridos");
+    var quantidadeProdutos = produtoRepository.count();
+    System.out.println("✓ " + quantidadeProdutos + " produtos inseridos");
   }
 
   private void inserirPedidos() {
@@ -133,19 +139,32 @@ public class DataLoader implements CommandLineRunner {
       return;
     }
     var pedido1 = new Pedido();
-    pedido1.setNumeroPedido("PED001");
+
+    var item1 = new ItemPedido();
+    item1.setProduto(produtos.get(0));
+    item1.setQuantidade(1);
+    item1.setPrecoUnitario(produtos.get(0).getPreco());
+    item1.setPedido(pedido1);
+    var item2 = new ItemPedido();
+    item2.setProduto(produtos.get(1));
+    item2.setQuantidade(2);
+    item2.setPrecoUnitario(produtos.get(1).getPreco());
+    item2.setPedido(pedido1);
+
     pedido1.setCliente(clientes.get(0));
-    pedido1.setRestaurante(restaurantes.get(0));
-    pedido1.setValorTotal(new BigDecimal("28.50"));
-    pedido1.setStatus(com.deliverytech.delivery_api.enums.StatusPedido.PENDENTE);
-    var pedido2 = new Pedido();
-    pedido2.setNumeroPedido("PED002");
-    pedido2.setCliente(clientes.get(1));
-    pedido2.setRestaurante(restaurantes.get(1));
-    pedido2.setValorTotal(new BigDecimal("23.00"));
-    pedido2.setStatus(com.deliverytech.delivery_api.enums.StatusPedido.CONFIRMADO);
-    pedidoRepository.saveAll(Arrays.asList(pedido1, pedido2));
-    System.out.println("✓ 2 pedidos inseridos");
+    pedido1.setRestaurante(restaurantes.get(1));
+    pedido1.setEnderecoEntrega(clientes.get(0).getEndereco());
+    pedido1.setStatus(StatusPedido.CONFIRMADO);
+    pedido1.setSubtotal(item1.getPrecoUnitario().add(item2.getPrecoUnitario()));
+    pedido1.setTaxaEntrega(restaurantes.get(0).getTaxaEntrega());
+    pedido1.setValorTotal(pedido1.getSubtotal().add(pedido1.getTaxaEntrega()));
+    pedido1.setObservacoes("Por favor, entregar rápido.");
+    pedido1.adicionarItem(item1);
+    pedido1.adicionarItem(item2);
+    pedidoRepository.save(pedido1);
+
+    var quantidadePedidos = pedidoRepository.count();
+    System.out.println("✓ " + quantidadePedidos + " pedidos inseridos");
   }
 
   private void testarConsultas() {
@@ -203,8 +222,9 @@ public class DataLoader implements CommandLineRunner {
     relatorioVendas.forEach(r -> System.out.println(" - " + r.getNomeRestaurante() +
         ": R$ " + r.getTotalVendas() + " em " + r.getQuantidadePedidos() + " pedidos"));
 
+    // Produtos mais vendidos
     var produtosMaisVendidos = produtoRepository.produtosMaisVendidos();
-    System.out.println("Produtos mais vendidos:");
+    System.out.println("\nProdutos mais vendidos:");
     produtosMaisVendidos.forEach(p -> System.out.println(" - " + p[0] + ": " + p[1] + " vendidos"));
   }
 }

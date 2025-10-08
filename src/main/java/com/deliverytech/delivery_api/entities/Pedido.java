@@ -3,6 +3,7 @@ package com.deliverytech.delivery_api.entities;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.ArrayList;
 
 import com.deliverytech.delivery_api.enums.StatusPedido;
 
@@ -50,6 +51,9 @@ public class Pedido {
     // adicionar item ao pedido
     public void adicionarItem(ItemPedido item) {
         item.setPedido(this);
+        if (this.itens == null) {
+            this.itens = new ArrayList<ItemPedido>();
+        }
         this.itens.add(item);
     }
 
