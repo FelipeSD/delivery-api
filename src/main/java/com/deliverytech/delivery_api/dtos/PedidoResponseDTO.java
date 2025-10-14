@@ -3,18 +3,32 @@ package com.deliverytech.delivery_api.dtos;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.PositiveOrZero;
+
 import com.deliverytech.delivery_api.enums.StatusPedido;
 
 public class PedidoResponseDTO {
   private Long id;
   private String numeroPedido;
   private LocalDateTime dataPedido;
+
+  @NotNull
   private String enderecoEntrega;
+
+  @PositiveOrZero
   private BigDecimal subtotal;
+
+  @PositiveOrZero
   private BigDecimal taxaEntrega;
+
+  @PositiveOrZero
   private BigDecimal valorTotal;
+
   private String observacoes;
+
   private StatusPedido status;
+
   private ClienteResponseDTO cliente;
 
   // Getters and setters

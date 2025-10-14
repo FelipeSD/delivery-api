@@ -18,9 +18,14 @@ public class Restaurante {
     private Long id;
     private String nome;
     private String categoria;
+    private String cidade;
+    private String estado;
     private String endereco;
     private String telefone;
     private BigDecimal taxaEntrega;
+    private String cep;
+    private Integer tempoEntregaMin;
+    private Integer tempoEntregaMax;
     private Double avaliacao;
     private boolean ativo;
 
