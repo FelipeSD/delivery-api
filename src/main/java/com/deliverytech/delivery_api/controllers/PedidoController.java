@@ -24,32 +24,60 @@ import com.deliverytech.delivery_api.dtos.PedidoResponseDTO;
 import com.deliverytech.delivery_api.dtos.StatusPedidoDTO;
 import com.deliverytech.delivery_api.services.PedidoService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping("/api/pedidos")
 @CrossOrigin(origins = "*")
+@Tag(name = "Pedidos", description = "API para gerenciamento de pedidos")
 public class PedidoController {
 
   @Autowired
   private PedidoService pedidoService;
 
+  @Operation(summary = "Criar novo pedido", description = "Cria um novo pedido no sistema")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "201", description = "Pedido criado com sucesso"),
+      @ApiResponse(responseCode = "400", description = "Dados inválidos fornecidos"),
+      @ApiResponse(responseCode = "404", description = "Cliente ou restaurante não encontrado")
+  })
   @PostMapping
   public ResponseEntity<PedidoResponseDTO> criarPedido(@Valid @RequestBody PedidoDTO dto) {
     PedidoResponseDTO pedido = pedidoService.criarPedido(dto);
     return ResponseEntity.status(HttpStatus.CREATED).body(pedido);
   }
 
+  @Operation(summary = "Buscar pedido por ID", description = "Retorna os detalhes de um pedido específico")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Pedido encontrado"),
+      @ApiResponse(responseCode = "404", description = "Pedido não encontrado")
+  })
   @GetMapping("/{id}")
   public ResponseEntity<PedidoResponseDTO> buscarPorId(@PathVariable Long id) {
     PedidoResponseDTO pedido = pedidoService.buscarPedidoPorId(id);
     return ResponseEntity.ok(pedido);
   }
 
+  @Operation(summary = "Listar pedidos por cliente", description = "Retorna todos os pedidos feitos por um cliente específico")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Lista de pedidos retornada com sucesso"),
+      @ApiResponse(responseCode = "404", description = "Cliente não encontrado")
+  })
   @GetMapping("/cliente/{clienteId}")
   public ResponseEntity<List<PedidoResponseDTO>> buscarPorCliente(@PathVariable Long clienteId) {
     List<PedidoResponseDTO> pedidos = pedidoService.buscarPedidosPorCliente(clienteId);
     return ResponseEntity.ok(pedidos);
   }
 
+  @Operation(summary = "Atualizar status do pedido", description = "Atualiza o status de um pedido existente")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Status do pedido atualizado com sucesso"),
+      @ApiResponse(responseCode = "400", description = "Status inválido fornecido"),
+      @ApiResponse(responseCode = "404", description = "Pedido não encontrado")
+  })
   @PatchMapping("/{id}/status")
   public ResponseEntity<PedidoResponseDTO> atualizarStatus(
       @PathVariable Long id,
@@ -58,12 +86,23 @@ public class PedidoController {
     return ResponseEntity.ok(pedido);
   }
 
+  @Operation(summary = "Cancelar pedido", description = "Cancela um pedido existente")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "204", description = "Pedido cancelado com sucesso"),
+      @ApiResponse(responseCode = "404", description = "Pedido não encontrado"),
+      @ApiResponse(responseCode = "400", description = "Pedido não pode ser cancelado")
+  })
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> cancelarPedido(@PathVariable Long id) {
     pedidoService.cancelarPedido(id);
     return ResponseEntity.noContent().build();
   }
 
+  @Operation(summary = "Calcular total do pedido", description = "Calcula o valor total de um pedido com base nos itens fornecidos")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Total do pedido calculado com sucesso"),
+      @ApiResponse(responseCode = "400", description = "Dados inválidos fornecidos")
+  })
   @PostMapping("/calcular")
   public ResponseEntity<BigDecimal> calcularTotal(@Valid @RequestBody List<ItemPedidoDTO> itens) {
     BigDecimal total = pedidoService.calcularTotalPedido(itens);

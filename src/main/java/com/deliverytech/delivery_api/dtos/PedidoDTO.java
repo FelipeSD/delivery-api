@@ -8,18 +8,25 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Dados para criação de pedido")
 public class PedidoDTO {
 
+  @Schema(description = "ID do cliente que fez o pedido", example = "1", required = true)
   @NotNull(message = "Cliente é obrigatório")
   private Long clienteId;
 
+  @Schema(description = "ID do restaurante onde o pedido foi feito", example = "1", required = true)
   @NotNull(message = "Restaurante é obrigatório")
   private Long restauranteId;
 
+  @Schema(description = "Endereço de entrega do pedido", example = "Rua das Flores, 123, Centro, Cidade - Estado", required = true)
   @NotBlank(message = "Endereço de entrega é obrigatório")
   @Size(max = 200, message = "Endereço deve ter no máximo 200 caracteres")
   private String enderecoEntrega;
 
+  @Schema(description = "Lista de itens do pedido", required = true)
   @NotEmpty(message = "Pedido deve ter pelo menos um item")
   @Valid
   private List<ItemPedidoDTO> itens;
