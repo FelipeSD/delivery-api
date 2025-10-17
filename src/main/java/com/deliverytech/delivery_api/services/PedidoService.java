@@ -3,6 +3,9 @@ package com.deliverytech.delivery_api.services;
 import java.math.BigDecimal;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import com.deliverytech.delivery_api.dtos.ItemPedidoDTO;
 import com.deliverytech.delivery_api.dtos.PedidoDTO;
 import com.deliverytech.delivery_api.dtos.PedidoResponseDTO;
@@ -13,7 +16,7 @@ public interface PedidoService {
 
   PedidoResponseDTO buscarPedidoPorId(Long id);
 
-  List<PedidoResponseDTO> buscarPedidosPorCliente(Long clienteId);
+  Page<PedidoResponseDTO> buscarPedidosPorCliente(Long clienteId, Pageable pageable);
 
   PedidoResponseDTO atualizarStatusPedido(Long id, StatusPedido status);
 

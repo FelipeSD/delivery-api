@@ -8,6 +8,9 @@ import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -134,12 +137,12 @@ public class PedidoServiceImpl implements PedidoService {
 
   @Override
   @Transactional(readOnly = true)
-  public List<PedidoResponseDTO> buscarPedidosPorCliente(Long clienteId) {
-    List<Pedido> pedidos = pedidoRepository.findByClienteIdOrderByDataPedidoDesc(clienteId);
-
-    return pedidos.stream()
+  public Page<PedidoResponseDTO> buscarPedidosPorCliente(Long clienteId, Pageable pageable) {
+    Page<Pedido> pedidosPage = pedidoRepository.findByClienteIdOrderByDataPedidoDesc(clienteId, pageable);
+    return pedidosPage.stream()
         .map(pedido -> modelMapper.map(pedido, PedidoResponseDTO.class))
-        .collect(Collectors.toList());
+        .collect(Collectors.collectingAndThen(Collectors.toList(),
+            list -> new PageImpl<>(list, pageable, list.size())));
   }
 
   @Override

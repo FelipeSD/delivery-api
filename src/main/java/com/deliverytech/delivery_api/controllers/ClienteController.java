@@ -1,10 +1,11 @@
 package com.deliverytech.delivery_api.controllers;
 
-import java.util.List;
-
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -17,8 +18,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.deliverytech.delivery_api.dtos.ApiResponseWrapper;
 import com.deliverytech.delivery_api.dtos.ClienteDTO;
 import com.deliverytech.delivery_api.dtos.ClienteResponseDTO;
+import com.deliverytech.delivery_api.dtos.PagedResponseWrapper;
 import com.deliverytech.delivery_api.services.ClienteService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -41,9 +44,11 @@ public class ClienteController {
       @ApiResponse(responseCode = "400", description = "Dados inválidos")
   })
   @PostMapping
-  public ResponseEntity<ClienteResponseDTO> cadastrarCliente(@Valid @RequestBody ClienteDTO dto) {
+  public ResponseEntity<ApiResponseWrapper<ClienteResponseDTO>> cadastrarCliente(@Valid @RequestBody ClienteDTO dto) {
     ClienteResponseDTO cliente = clienteService.cadastrarCliente(dto);
-    return ResponseEntity.status(HttpStatus.CREATED).body(cliente);
+    ApiResponseWrapper<ClienteResponseDTO> response = new ApiResponseWrapper<>(true, cliente,
+        "Cliente criado com sucesso");
+    return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
 
   @Operation(summary = "Buscar cliente por ID", description = "Retorna os detalhes de um cliente específico")
@@ -52,16 +57,20 @@ public class ClienteController {
       @ApiResponse(responseCode = "404", description = "Cliente não encontrado")
   })
   @GetMapping("/{id}")
-  public ResponseEntity<ClienteResponseDTO> buscarPorId(@PathVariable Long id) {
+  public ResponseEntity<ApiResponseWrapper<ClienteResponseDTO>> buscarPorId(@PathVariable Long id) {
     ClienteResponseDTO cliente = clienteService.buscarClientePorId(id);
-    return ResponseEntity.ok(cliente);
+    ApiResponseWrapper<ClienteResponseDTO> response = new ApiResponseWrapper<>(true, cliente,
+        "Cliente encontrado com sucesso");
+    return ResponseEntity.ok(response);
   }
 
   @Operation(summary = "Listar clientes ativos", description = "Retorna uma lista de todos os clientes ativos no sistema")
   @GetMapping
-  public ResponseEntity<List<ClienteResponseDTO>> listarClientesAtivos() {
-    List<ClienteResponseDTO> clientes = clienteService.listarClientesAtivos();
-    return ResponseEntity.ok(clientes);
+  public ResponseEntity<PagedResponseWrapper<ClienteResponseDTO>> listarClientesAtivos(
+      @PageableDefault(size = 20) Pageable pageable) {
+    Page<ClienteResponseDTO> clientes = clienteService.listarClientesAtivos(pageable);
+    PagedResponseWrapper<ClienteResponseDTO> response = new PagedResponseWrapper<>(clientes);
+    return ResponseEntity.ok(response);
   }
 
   @Operation(summary = "Atualizar cliente", description = "Atualiza os dados de um cliente existente")
@@ -71,11 +80,13 @@ public class ClienteController {
       @ApiResponse(responseCode = "404", description = "Cliente não encontrado")
   })
   @PutMapping("/{id}")
-  public ResponseEntity<ClienteResponseDTO> atualizarCliente(
+  public ResponseEntity<ApiResponseWrapper<ClienteResponseDTO>> atualizarCliente(
       @PathVariable Long id,
       @Valid @RequestBody ClienteDTO dto) {
     ClienteResponseDTO cliente = clienteService.atualizarCliente(id, dto);
-    return ResponseEntity.ok(cliente);
+    ApiResponseWrapper<ClienteResponseDTO> response = new ApiResponseWrapper<>(true, cliente,
+        "Cliente atualizado com sucesso");
+    return ResponseEntity.ok(response);
   }
 
   @Operation(summary = "Ativar/Desativar cliente", description = "Ativa ou desativa um cliente no sistema")
@@ -84,9 +95,11 @@ public class ClienteController {
       @ApiResponse(responseCode = "404", description = "Cliente não encontrado")
   })
   @PatchMapping("/{id}/status")
-  public ResponseEntity<ClienteResponseDTO> ativarDesativarCliente(@PathVariable Long id) {
+  public ResponseEntity<ApiResponseWrapper<ClienteResponseDTO>> ativarDesativarCliente(@PathVariable Long id) {
     ClienteResponseDTO cliente = clienteService.ativarDesativarCliente(id);
-    return ResponseEntity.ok(cliente);
+    ApiResponseWrapper<ClienteResponseDTO> response = new ApiResponseWrapper<>(true, cliente,
+        "Status do cliente atualizado com sucesso");
+    return ResponseEntity.ok(response);
   }
 
   @Operation(summary = "Buscar cliente por email", description = "Retorna os detalhes de um cliente específico pelo email")
@@ -95,8 +108,10 @@ public class ClienteController {
       @ApiResponse(responseCode = "404", description = "Cliente não encontrado")
   })
   @GetMapping("/email/{email}")
-  public ResponseEntity<ClienteResponseDTO> buscarPorEmail(@PathVariable String email) {
+  public ResponseEntity<ApiResponseWrapper<ClienteResponseDTO>> buscarPorEmail(@PathVariable String email) {
     ClienteResponseDTO cliente = clienteService.buscarClientePorEmail(email);
-    return ResponseEntity.ok(cliente);
+    ApiResponseWrapper<ClienteResponseDTO> response = new ApiResponseWrapper<>(true, cliente,
+        "Cliente encontrado com sucesso");
+    return ResponseEntity.ok(response);
   }
 }

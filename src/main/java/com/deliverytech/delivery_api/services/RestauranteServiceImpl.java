@@ -6,6 +6,9 @@ import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,8 +46,15 @@ public class RestauranteServiceImpl implements RestauranteService {
     restaurante.setNome(restauranteDTO.getNome());
     restaurante.setTelefone(restauranteDTO.getTelefone());
     restaurante.setCategoria(restauranteDTO.getCategoria());
+    restaurante.setCnpj(restauranteDTO.getCnpj());
+    restaurante.setEmail(restauranteDTO.getEmail());
     restaurante.setTaxaEntrega(restauranteDTO.getTaxaEntrega());
     restaurante.setEndereco(restauranteDTO.getEndereco());
+    restaurante.setCidade(restauranteDTO.getCidade());
+    restaurante.setEstado(restauranteDTO.getEstado());
+    restaurante.setCep(restauranteDTO.getCep());
+    restaurante.setTempoEntregaMin(restauranteDTO.getTempoEntregaMin());
+    restaurante.setTempoEntregaMax(restauranteDTO.getTempoEntregaMax());
     restaurante.setAtivo(true);
 
     Restaurante restauranteSalvo = restauranteRepository.save(restaurante);
@@ -63,27 +73,27 @@ public class RestauranteServiceImpl implements RestauranteService {
 
   @Override
   @Transactional(readOnly = true)
-  public List<RestauranteResponseDTO> listarDisponiveis() {
-    List<Restaurante> restaurantes = restauranteRepository.findByAtivoTrue();
-
+  public Page<RestauranteResponseDTO> listarDisponiveis(Pageable pageable) {
+    Page<Restaurante> restaurantes = restauranteRepository.findByAtivoTrue(pageable);
     return restaurantes.stream()
         .map(this::converterParaResponseDTO)
-        .collect(Collectors.toList());
+        .collect(Collectors.collectingAndThen(Collectors.toList(),
+            list -> new PageImpl<>(list, pageable, list.size())));
   }
 
   @Override
   @Transactional(readOnly = true)
-  public List<RestauranteResponseDTO> listarPorCategoria(String categoria) {
+  public Page<RestauranteResponseDTO> listarPorCategoria(String categoria, Pageable pageable) {
     if (categoria == null || categoria.trim().isEmpty()) {
       throw new BusinessException("Categoria não pode ser vazia");
     }
 
-    List<Restaurante> restaurantes = restauranteRepository
-        .findByCategoriaAndAtivoTrue(categoria);
+    Page<Restaurante> restaurantes = restauranteRepository.findByCategoriaAndAtivoTrue(categoria, pageable);
 
     return restaurantes.stream()
         .map(this::converterParaResponseDTO)
-        .collect(Collectors.toList());
+        .collect(Collectors.collectingAndThen(Collectors.toList(),
+            list -> new PageImpl<>(list, pageable, list.size())));
   }
 
   @Override
@@ -174,17 +184,18 @@ public class RestauranteServiceImpl implements RestauranteService {
 
   @Override
   @Transactional(readOnly = true)
-  public List<RestauranteResponseDTO> buscarPorNome(String nome) {
+  public Page<RestauranteResponseDTO> buscarPorNome(String nome, Pageable pageable) {
     if (nome == null || nome.trim().isEmpty()) {
       throw new BusinessException("Nome para busca não pode ser vazio");
     }
 
-    List<Restaurante> restaurantes = restauranteRepository
-        .findByNomeContainingIgnoreCaseAndAtivoTrue(nome);
+    Page<Restaurante> restaurantes = restauranteRepository
+        .findByNomeContainingIgnoreCaseAndAtivoTrue(nome, pageable);
 
     return restaurantes.stream()
         .map(this::converterParaResponseDTO)
-        .collect(Collectors.toList());
+        .collect(Collectors.collectingAndThen(Collectors.toList(),
+            list -> new PageImpl<>(list, pageable, list.size())));
   }
 
   @Override
@@ -196,7 +207,7 @@ public class RestauranteServiceImpl implements RestauranteService {
     RestauranteResponseDTO response = converterParaResponseDTO(restaurante);
 
     // Buscar produtos do restaurante
-    List<Produto> produtos = produtoRepository.findByRestauranteIdAndDisponivelTrue(id);
+    Page<Produto> produtos = produtoRepository.findByRestauranteIdAndDisponivelTrue(id, Pageable.unpaged());
 
     List<ProdutoResponseDTO> produtosDTO = produtos.stream()
         .map(produto -> {

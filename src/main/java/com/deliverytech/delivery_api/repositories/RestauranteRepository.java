@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -17,25 +19,25 @@ public interface RestauranteRepository extends JpaRepository<Restaurante, Long> 
   Optional<Restaurante> findByNome(String nome);
 
   // Buscar restaurantes ativos
-  List<Restaurante> findByAtivoTrue();
+  Page<Restaurante> findByAtivoTrue(Pageable pageable);
 
   // Buscar por categoria
-  List<Restaurante> findByCategoriaAndAtivoTrue(String categoria);
+  Page<Restaurante> findByCategoriaAndAtivoTrue(String categoria, Pageable pageable);
 
   // Buscar por nome contendo (case insensi ve)
-  List<Restaurante> findByNomeContainingIgnoreCaseAndAtivoTrue(String nome);
+  Page<Restaurante> findByNomeContainingIgnoreCaseAndAtivoTrue(String nome, Pageable pageable);
 
   // Buscar por avaliação mínima
-  List<Restaurante> findByAvaliacaoGreaterThanEqualAndAtivoTrue(BigDecimal avaliacao);
+  Page<Restaurante> findByAvaliacaoGreaterThanEqualAndAtivoTrue(BigDecimal avaliacao, Pageable pageable);
 
   // Ordenar por avaliação (descendente)
-  List<Restaurante> findByAtivoTrueOrderByAvaliacaoDesc();
+  Page<Restaurante> findByAtivoTrueOrderByAvaliacaoDesc(Pageable pageable);
 
   // Por taxa de entrega menor ou igual
-  List<Restaurante> findByTaxaEntregaLessThanEqual(BigDecimal taxa);
+  Page<Restaurante> findByTaxaEntregaLessThanEqual(BigDecimal taxa, Pageable pageable);
 
   // Top 5 restaurantes por nome (ordem alfabética)
-  List<Restaurante> findTop5ByOrderByNomeAsc();
+  Page<Restaurante> findTop5ByOrderByNomeAsc(Pageable pageable);
 
   // Query customizada - restaurantes com produtos
   @Query("SELECT DISTINCT r FROM Restaurante r JOIN r.produtos p WHERE r.ativo = true")

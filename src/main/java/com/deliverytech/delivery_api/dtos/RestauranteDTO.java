@@ -9,10 +9,13 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Size;
 
 @Schema(description = "Dados para criação/atualização de restaurante")
 public class RestauranteDTO {
-
+ 
   @Schema(description = "Nome do restaurante", example = "Restaurante Bom Sabor", required = true)
   @NotBlank(message = "Nome é obrigatório")
   private String nome;
@@ -29,10 +32,14 @@ public class RestauranteDTO {
 
   @Schema(description = "Telefone do restaurante", example = "1699999-9999", required = true)
   @NotBlank(message = "Telefone é obrigatório")
+  @Pattern(regexp = "\\d{10,11}", message = "Telefone deve ter 10 ou 11 dígitos")
   private String telefone;
 
-  @Schema(description = "Categoria do restaurante", example = "Italiana", required = true)
+  @Schema(description = "Categoria do restaurante", example = "Italiana", allowableValues = {
+      "Italiana", "Brasileira",
+      "Japonesa", "Mexicana", "Árabe" }, required = true)
   @NotBlank(message = "Categoria é obrigatória")
+  @Pattern(regexp = "Italiana|Brasileira|Japonesa|Mexicana|Árabe", message = "Categoria deve ser uma das seguintes: Italiana, Brasileira, Japonesa, Mexicana, Árabe")
   private String categoria;
 
   @Schema(description = "Taxa de entrega do restaurante", example = "5.00", required = true)
@@ -41,15 +48,20 @@ public class RestauranteDTO {
   private BigDecimal taxaEntrega;
 
   @Schema(description = "Tempo mínimo de entrega em minutos", example = "30", required = true)
+  @Min(value = 10, message = "Tempo mínimo é 10 minutos")
+  @Max(value = 120, message = "Tempo máximo é 120 minutos")
   private Integer tempoEntregaMin;
-  
+
   @Schema(description = "Tempo máximo de entrega em minutos", example = "45", required = true)
+  @Min(value = 10, message = "Tempo mínimo é 10 minutos")
+  @Max(value = 120, message = "Tempo máximo é 120 minutos")
   private Integer tempoEntregaMax;
 
   @Schema(description = "URL da imagem do restaurante", example = "https://example.com/imagem.jpg")
   private String imagemUrl;
 
   @Schema(description = "Endereço do restaurante", example = "Rua das Flores, 123", required = true)
+  @Size(max = 200, message = "Endereço deve ter no máximo 200 caracteres")
   private String endereco;
 
   @Schema(description = "Cidade onde o restaurante está localizado", example = "São Paulo", required = true)

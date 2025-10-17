@@ -6,6 +6,7 @@ import java.util.Arrays;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+import org.springframework.data.domain.Pageable;
 
 import com.deliverytech.delivery_api.entities.Cliente;
 import com.deliverytech.delivery_api.entities.ItemPedido;
@@ -180,39 +181,38 @@ public class DataLoader implements CommandLineRunner {
     System.out.println("Clientes com 'silva' no nome: " + clientesPorNome.size());
     boolean emailExiste = clienteRepository.existsByEmail("maria@email.com");
     System.out.println("Email maria@email.com existe: " + emailExiste);
-    // ... continuar com outros testes
 
     // Teste RestauranteRepository
     System.out.println("\n--- Testes RestauranteRepository ---");
     var restaurantePorNome = restauranteRepository.findByNome("Pizza Express");
     System.out.println("Restaurante por nome: " +
         (restaurantePorNome.isPresent() ? restaurantePorNome.get().getNome() : "Não encontrado"));
-    var restaurantesAtivos = restauranteRepository.findByAtivoTrue();
-    System.out.println("Restaurantes ativos: " + restaurantesAtivos.size());
-    var restaurantesPorCategoria = restauranteRepository.findByCategoriaAndAtivoTrue("Fast Food");
-    System.out.println("Restaurantes na categoria 'Fast Food': " + restaurantesPorCategoria.size());
+    var restaurantesAtivos = restauranteRepository.findByAtivoTrue(Pageable.unpaged());
+    System.out.println("Restaurantes ativos: " + restaurantesAtivos.getSize());
+    var restaurantesPorCategoria = restauranteRepository.findByCategoriaAndAtivoTrue("Fast Food", Pageable.unpaged());
+    System.out.println("Restaurantes na categoria 'Fast Food': " + restaurantesPorCategoria.getSize());
     var restaurantesPorAvaliacao = restauranteRepository
-        .findByAvaliacaoGreaterThanEqualAndAtivoTrue(new BigDecimal("4.0"));
-    System.out.println("Restaurantes com avaliação >= 4.0: " + restaurantesPorAvaliacao.size());
+        .findByAvaliacaoGreaterThanEqualAndAtivoTrue(new BigDecimal("4.0"), Pageable.unpaged());
+    System.out.println("Restaurantes com avaliação >= 4.0: " + restaurantesPorAvaliacao.getSize());
 
-    var top5Restaurantes = restauranteRepository.findTop5ByOrderByNomeAsc();
+    var top5Restaurantes = restauranteRepository.findTop5ByOrderByNomeAsc(Pageable.unpaged());
     System.out.println("Top 5 restaurantes por nome:");
     top5Restaurantes.forEach(r -> System.out.println(" - " + r.getNome()));
 
     // Teste ProdutoRepository
     System.out.println("\n--- Testes ProdutoRepository ---");
-    var produtosPorNome = produtoRepository.findByNomeContainingIgnoreCaseAndDisponivelTrue("pizza");
-    System.out.println("Produtos com 'pizza' no nome: " + produtosPorNome.size());
-    var produtosPorCategoria = produtoRepository.findByCategoriaAndDisponivelTrue("Hambúrguer");
-    System.out.println("Produtos na categoria 'Hambúrguer': " + produtosPorCategoria.size());
-
+    var produtosPorNome = produtoRepository.findByNomeContainingIgnoreCaseAndDisponivelTrue("pizza",
+        Pageable.unpaged());
+    System.out.println("Produtos com 'pizza' no nome: " + produtosPorNome.getSize());
+    var produtosPorCategoria = produtoRepository.findByCategoriaAndDisponivelTrue("Hambúrguer", Pageable.unpaged());
+    System.out.println("Produtos na categoria 'Hambúrguer': " + produtosPorCategoria.getSize());
     // Teste PedidoRepository
     System.out.println("\n--- Testes PedidoRepository ---");
-    var pedidosPorCliente = pedidoRepository.findByClienteIdOrderByDataPedidoDesc(1L);
-    System.out.println("Pedidos do cliente ID 1: " + pedidosPorCliente.size());
-    var pedidosPendentes = pedidoRepository.findPedidosPendentes();
-    System.out.println("Pedidos pendentes: " + pedidosPendentes.size());
-    var vendasPorRestaurante = pedidoRepository.calcularTotalVendasPorRestaurante();
+    var pedidosPorCliente = pedidoRepository.findByClienteIdOrderByDataPedidoDesc(1L, Pageable.unpaged());
+    System.out.println("Pedidos do cliente ID 1: " + pedidosPorCliente.getSize());
+    var pedidosPendentes = pedidoRepository.findPedidosPendentes(Pageable.unpaged());
+    System.out.println("Pedidos pendentes: " + pedidosPendentes.getSize());
+    var vendasPorRestaurante = pedidoRepository.calcularTotalVendasPorRestaurante(Pageable.unpaged());
     System.out.println("Total de vendas por restaurante:");
     vendasPorRestaurante.forEach(v -> System.out.println(" - " + v[0] + ": R$ " + v[1]));
 

@@ -5,6 +5,9 @@ import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.deliverytech.delivery_api.dtos.ClienteDTO;
@@ -95,11 +98,12 @@ public class ClienteServiceImpl implements ClienteService {
 
   @Override
   @Transactional(readOnly = true)
-  public List<ClienteResponseDTO> listarClientesAtivos() {
+  public Page<ClienteResponseDTO> listarClientesAtivos(Pageable pageable) {
     List<Cliente> clientesAtivos = clienteRepository.findByAtivoTrue();
 
     return clientesAtivos.stream()
         .map(cliente -> modelMapper.map(cliente, ClienteResponseDTO.class))
-        .collect(Collectors.toList());
+        .collect(Collectors.collectingAndThen(Collectors.toList(),
+            list -> new PageImpl<>(list, pageable, list.size())));
   }
 }

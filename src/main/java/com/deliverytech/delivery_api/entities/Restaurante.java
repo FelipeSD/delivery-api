@@ -18,6 +18,8 @@ public class Restaurante {
     private Long id;
     private String nome;
     private String categoria;
+    private String cnpj;
+    private String email;
     private String cidade;
     private String estado;
     private String endereco;

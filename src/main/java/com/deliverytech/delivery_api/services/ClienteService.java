@@ -1,6 +1,7 @@
 package com.deliverytech.delivery_api.services;
 
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import com.deliverytech.delivery_api.dtos.ClienteDTO;
 import com.deliverytech.delivery_api.dtos.ClienteResponseDTO;
@@ -16,5 +17,5 @@ public interface ClienteService {
 
   ClienteResponseDTO ativarDesativarCliente(Long id);
 
-  List<ClienteResponseDTO> listarClientesAtivos();
+  Page<ClienteResponseDTO> listarClientesAtivos(Pageable pageable);
 }

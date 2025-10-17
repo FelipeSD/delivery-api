@@ -1,7 +1,9 @@
 package com.deliverytech.delivery_api.services;
 
 import java.math.BigDecimal;
-import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import com.deliverytech.delivery_api.dtos.ProdutoDTO;
 import com.deliverytech.delivery_api.dtos.ProdutoResponseDTO;
@@ -21,12 +23,12 @@ public interface ProdutoService {
   /**
    * Listar produtos por restaurante
    */
-  List<ProdutoResponseDTO> listarPorRestaurante(Long restauranteId);
+  Page<ProdutoResponseDTO> listarPorRestaurante(Long restauranteId, Pageable pageable);
 
   /**
    * Buscar produtos por categoria
    */
-  List<ProdutoResponseDTO> buscarPorCategoria(String categoria);
+  Page<ProdutoResponseDTO> buscarPorCategoria(String categoria, Pageable pageable);
 
   /**
    * Atualizar produto
@@ -41,10 +43,10 @@ public interface ProdutoService {
   /**
    * Buscar produtos por faixa de preço
    */
-  List<ProdutoResponseDTO> buscarPorFaixaPreco(BigDecimal precoMin, BigDecimal precoMax);
+  Page<ProdutoResponseDTO> buscarPorFaixaPreco(BigDecimal precoMin, BigDecimal precoMax, Pageable pageable);
 
   /**
    * Buscar produtos por restaurante e categoria
    */
-  List<ProdutoResponseDTO> buscarPorRestauranteECategoria(Long restauranteId, String categoria);
+  Page<ProdutoResponseDTO> buscarPorRestauranteECategoria(Long restauranteId, String categoria, Pageable pageable);
 }

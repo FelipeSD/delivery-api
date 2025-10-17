@@ -3,6 +3,8 @@ package com.deliverytech.delivery_api.repositories;
 import java.math.BigDecimal;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,25 +15,25 @@ import com.deliverytech.delivery_api.entities.Restaurante;
 @Repository
 public interface ProdutoRepository extends JpaRepository<Produto, Long> {
   // Buscar produtos por restaurante
-  List<Produto> findByRestauranteAndDisponivelTrue(Restaurante restaurante);
+  Page<Produto> findByRestauranteAndDisponivelTrue(Restaurante restaurante, Pageable pageable);
 
   // Buscar produtos por restaurante ID
-  List<Produto> findByRestauranteIdAndDisponivelTrue(Long restauranteId);
+  Page<Produto> findByRestauranteIdAndDisponivelTrue(Long restauranteId, Pageable pageable);
 
   // Buscar por categoria
-  List<Produto> findByCategoriaAndDisponivelTrue(String categoria);
+  Page<Produto> findByCategoriaAndDisponivelTrue(String categoria, Pageable pageable);
 
   // Buscar por nome contendo
-  List<Produto> findByNomeContainingIgnoreCaseAndDisponivelTrue(String nome);
+  Page<Produto> findByNomeContainingIgnoreCaseAndDisponivelTrue(String nome, Pageable pageable);
 
   // Buscar por faixa de preço
-  List<Produto> findByPrecoBetweenAndDisponivelTrue(BigDecimal precoMin, BigDecimal precoMax);
+  Page<Produto> findByPrecoBetweenAndDisponivelTrue(BigDecimal precoMin, BigDecimal precoMax, Pageable pageable);
 
   // Buscar produtos mais baratos que um valor
-  List<Produto> findByPrecoLessThanEqualAndDisponivelTrue(BigDecimal preco);
+  Page<Produto> findByPrecoLessThanEqualAndDisponivelTrue(BigDecimal preco, Pageable pageable);
 
   // Por faixa de preço (menor ou igual)
-  List<Produto> findByPrecoLessThanEqual(BigDecimal preco);
+  Page<Produto> findByPrecoLessThanEqual(BigDecimal preco, Pageable pageable);
 
   // Ordenar por preço
   List<Produto> findByDisponivelTrueOrderByPrecoAsc();

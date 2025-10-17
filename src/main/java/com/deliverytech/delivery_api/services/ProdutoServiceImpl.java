@@ -6,6 +6,9 @@ import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,8 +50,8 @@ public class ProdutoServiceImpl implements ProdutoService {
     validarDadosProduto(produtoDTO);
 
     // 3. Verificar se já existe produto com mesmo nome no restaurante
-    List<Produto> produtosExistentes = produtoRepository
-        .findByRestauranteIdAndDisponivelTrue(restaurante.getId());
+    Page<Produto> produtosExistentes = produtoRepository
+        .findByRestauranteIdAndDisponivelTrue(restaurante.getId(), Pageable.unpaged());
 
     boolean nomeJaExiste = produtosExistentes.stream()
         .anyMatch(p -> p.getNome().equalsIgnoreCase(produtoDTO.getNome()));
@@ -83,31 +86,33 @@ public class ProdutoServiceImpl implements ProdutoService {
 
   @Override
   @Transactional(readOnly = true)
-  public List<ProdutoResponseDTO> listarPorRestaurante(Long restauranteId) {
+  public Page<ProdutoResponseDTO> listarPorRestaurante(Long restauranteId, Pageable pageable) {
     // Validar se restaurante existe
     if (!restauranteRepository.existsById(restauranteId)) {
       throw new EntityNotFoundException("Restaurante não encontrado com ID: " + restauranteId);
     }
 
-    List<Produto> produtos = produtoRepository.findByRestauranteIdAndDisponivelTrue(restauranteId);
+    Page<Produto> produtos = produtoRepository.findByRestauranteIdAndDisponivelTrue(restauranteId, pageable);
 
     return produtos.stream()
         .map(this::converterParaResponseDTO)
-        .collect(Collectors.toList());
+        .collect(Collectors.collectingAndThen(Collectors.toList(),
+            list -> new PageImpl<>(list, pageable, list.size())));
   }
 
   @Override
   @Transactional(readOnly = true)
-  public List<ProdutoResponseDTO> buscarPorCategoria(String categoria) {
+  public Page<ProdutoResponseDTO> buscarPorCategoria(String categoria, Pageable pageable) {
     if (categoria == null || categoria.trim().isEmpty()) {
       throw new BusinessException("Categoria não pode ser vazia");
     }
 
-    List<Produto> produtos = produtoRepository.findByCategoriaAndDisponivelTrue(categoria);
+    Page<Produto> produtos = produtoRepository.findByCategoriaAndDisponivelTrue(categoria, pageable);
 
     return produtos.stream()
         .map(this::converterParaResponseDTO)
-        .collect(Collectors.toList());
+        .collect(Collectors.collectingAndThen(Collectors.toList(),
+            list -> new PageImpl<>(list, pageable, list.size())));
   }
 
   @Override
@@ -122,8 +127,8 @@ public class ProdutoServiceImpl implements ProdutoService {
 
     // 3. Verificar se mudou o nome e se já existe outro produto com esse nome
     if (!produto.getNome().equalsIgnoreCase(produtoDTO.getNome())) {
-      List<Produto> produtosExistentes = produtoRepository
-          .findByRestauranteIdAndDisponivelTrue(produto.getRestaurante().getId());
+      Page<Produto> produtosExistentes = produtoRepository
+          .findByRestauranteIdAndDisponivelTrue(produto.getRestaurante().getId(), Pageable.unpaged());
 
       boolean nomeJaExiste = produtosExistentes.stream()
           .filter(p -> !p.getId().equals(id))
@@ -162,7 +167,7 @@ public class ProdutoServiceImpl implements ProdutoService {
 
   @Override
   @Transactional(readOnly = true)
-  public List<ProdutoResponseDTO> buscarPorFaixaPreco(BigDecimal precoMin, BigDecimal precoMax) {
+  public Page<ProdutoResponseDTO> buscarPorFaixaPreco(BigDecimal precoMin, BigDecimal precoMax, Pageable pageable) {
     // Validações
     if (precoMin == null || precoMax == null) {
       throw new BusinessException("Preço mínimo e máximo são obrigatórios");
@@ -176,16 +181,18 @@ public class ProdutoServiceImpl implements ProdutoService {
       throw new BusinessException("Preço mínimo não pode ser maior que o preço máximo");
     }
 
-    List<Produto> produtos = produtoRepository.findByPrecoBetweenAndDisponivelTrue(precoMin, precoMax);
+    Page<Produto> produtos = produtoRepository.findByPrecoBetweenAndDisponivelTrue(precoMin, precoMax, pageable);
 
     return produtos.stream()
         .map(this::converterParaResponseDTO)
-        .collect(Collectors.toList());
+        .collect(Collectors.collectingAndThen(Collectors.toList(),
+            list -> new PageImpl<>(list, pageable, list.size())));
   }
 
   @Override
   @Transactional(readOnly = true)
-  public List<ProdutoResponseDTO> buscarPorRestauranteECategoria(Long restauranteId, String categoria) {
+  public Page<ProdutoResponseDTO> buscarPorRestauranteECategoria(Long restauranteId, String categoria,
+      Pageable pageable) {
     // Validar restaurante existe
     if (!restauranteRepository.existsById(restauranteId)) {
       throw new EntityNotFoundException("Restaurante não encontrado com ID: " + restauranteId);
@@ -196,14 +203,15 @@ public class ProdutoServiceImpl implements ProdutoService {
     }
 
     List<Produto> produtos = produtoRepository
-        .findByRestauranteIdAndDisponivelTrue(restauranteId)
+        .findByRestauranteIdAndDisponivelTrue(restauranteId, Pageable.unpaged())
         .stream()
         .filter(p -> p.getCategoria().equalsIgnoreCase(categoria))
         .collect(Collectors.toList());
 
     return produtos.stream()
         .map(this::converterParaResponseDTO)
-        .collect(Collectors.toList());
+        .collect(Collectors.collectingAndThen(Collectors.toList(),
+            list -> new PageImpl<>(list, pageable, list.size())));
   }
 
   // ==================== MÉTODOS AUXILIARES ====================

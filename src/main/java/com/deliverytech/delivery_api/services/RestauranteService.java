@@ -1,6 +1,7 @@
 package com.deliverytech.delivery_api.services;
 
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import com.deliverytech.delivery_api.dtos.RestauranteDTO;
 import com.deliverytech.delivery_api.dtos.RestauranteResponseDTO;
@@ -24,7 +25,7 @@ public interface RestauranteService {
    * Buscar restaurante por nome
    * @return Lista de RestauranteResponseDTO
    */
-  List<RestauranteResponseDTO> buscarPorNome(String nome);
+  Page<RestauranteResponseDTO> buscarPorNome(String nome, Pageable pageable);
 
   /**
    * Buscar restaurante com produtos
@@ -35,12 +36,12 @@ public interface RestauranteService {
   /**
    * Listar restaurantes disponíveis (ativos)
    */
-  List<RestauranteResponseDTO> listarDisponiveis();
+  Page<RestauranteResponseDTO> listarDisponiveis(Pageable pageable);
 
   /**
    * Listar restaurantes por categoria
    */
-  List<RestauranteResponseDTO> listarPorCategoria(String categoria);
+  Page<RestauranteResponseDTO> listarPorCategoria(String categoria, Pageable pageable);
 
   /**
    * Atualizar restaurante

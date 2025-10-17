@@ -1,8 +1,9 @@
 package com.deliverytech.delivery_api.controllers;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -14,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.deliverytech.delivery_api.dtos.ApiResponseWrapper;
+import com.deliverytech.delivery_api.dtos.PagedResponseWrapper;
 import com.deliverytech.delivery_api.dtos.RestauranteDTO;
 import com.deliverytech.delivery_api.dtos.RestauranteResponseDTO;
 import com.deliverytech.delivery_api.dtos.TaxaEntregaResponseDTO;
@@ -23,6 +26,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/restaurantes")
@@ -39,9 +43,12 @@ public class RestauranteController {
       @ApiResponse(responseCode = "400", description = "Dados inválidos")
   })
   @PostMapping
-  public ResponseEntity<RestauranteResponseDTO> cadastrarRestaurante(@RequestBody RestauranteDTO restaurante) {
+  public ResponseEntity<ApiResponseWrapper<RestauranteResponseDTO>> cadastrarRestaurante(
+      @Valid @RequestBody RestauranteDTO restaurante) {
     RestauranteResponseDTO novo = restauranteService.cadastrar(restaurante);
-    return ResponseEntity.status(HttpStatus.CREATED).body(novo);
+    ApiResponseWrapper<RestauranteResponseDTO> response = new ApiResponseWrapper<>(true, novo,
+        "Restaurante criado com sucesso");
+    return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
 
   // GET /api/restaurantes/{id} - Buscar por ID
@@ -51,10 +58,12 @@ public class RestauranteController {
       @ApiResponse(responseCode = "404", description = "Restaurante não encontrado")
   })
   @GetMapping("/{id}")
-  public ResponseEntity<RestauranteResponseDTO> buscarPorId(@PathVariable Long id) {
+  public ResponseEntity<ApiResponseWrapper<RestauranteResponseDTO>> buscarPorId(@PathVariable Long id) {
     RestauranteResponseDTO restaurante = restauranteService.buscarPorId(id);
+    ApiResponseWrapper<RestauranteResponseDTO> response = new ApiResponseWrapper<>(true, restaurante,
+        "Restaurante encontrado");
     if (restaurante != null) {
-      return ResponseEntity.ok(restaurante);
+      return ResponseEntity.ok(response);
     }
     return ResponseEntity.notFound().build();
   }
@@ -62,17 +71,21 @@ public class RestauranteController {
   // GET /api/restaurantes - Listar disponíveis
   @Operation(summary = "Listar restaurantes disponíveis", description = "Retorna todos os restaurantes que estão disponíveis para receber pedidos")
   @GetMapping
-  public ResponseEntity<List<RestauranteResponseDTO>> listarDisponiveis() {
-    List<RestauranteResponseDTO> restaurantes = restauranteService.listarDisponiveis();
-    return ResponseEntity.ok(restaurantes);
+  public ResponseEntity<PagedResponseWrapper<RestauranteResponseDTO>> listarDisponiveis(
+      @PageableDefault(size = 20) Pageable pageable) {
+    Page<RestauranteResponseDTO> restaurantes = restauranteService.listarDisponiveis(pageable);
+    PagedResponseWrapper<RestauranteResponseDTO> response = new PagedResponseWrapper<>(restaurantes);
+    return ResponseEntity.ok(response);
   }
 
   // GET /api/restaurantes/categoria/{categoria} - Por categoria
   @Operation(summary = "Listar restaurantes por categoria", description = "Retorna todos os restaurantes que pertencem a uma categoria específica")
   @GetMapping("/categoria/{categoria}")
-  public ResponseEntity<List<RestauranteResponseDTO>> listarPorCategoria(@PathVariable String categoria) {
-    List<RestauranteResponseDTO> restaurantes = restauranteService.listarPorCategoria(categoria);
-    return ResponseEntity.ok(restaurantes);
+  public ResponseEntity<PagedResponseWrapper<RestauranteResponseDTO>> listarPorCategoria(@PathVariable String categoria,
+      @PageableDefault(size = 20) Pageable pageable) {
+    Page<RestauranteResponseDTO> restaurantes = restauranteService.listarPorCategoria(categoria, pageable);
+    PagedResponseWrapper<RestauranteResponseDTO> response = new PagedResponseWrapper<>(restaurantes);
+    return ResponseEntity.ok(response);
   }
 
   // PUT /api/restaurantes/{id} - Atualizar restaurante
@@ -84,7 +97,7 @@ public class RestauranteController {
   })
   @PutMapping("/{id}")
   public ResponseEntity<RestauranteResponseDTO> atualizarRestaurante(@PathVariable Long id,
-      @RequestBody RestauranteDTO restaurante) {
+      @Valid @RequestBody RestauranteDTO restaurante) {
     RestauranteResponseDTO atualizado = restauranteService.atualizar(id, restaurante);
     if (atualizado != null) {
       return ResponseEntity.ok(atualizado);
