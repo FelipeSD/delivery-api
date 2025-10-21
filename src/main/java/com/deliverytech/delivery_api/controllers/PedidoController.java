@@ -3,7 +3,7 @@ package com.deliverytech.delivery_api.controllers;
 import java.math.BigDecimal;
 import java.util.List;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -81,7 +81,7 @@ public class PedidoController {
       @PathVariable Long clienteId,
       @PageableDefault(size = 20) Pageable pageable) {
     Page<PedidoResponseDTO> pedidos = pedidoService.buscarPedidosPorCliente(clienteId, pageable);
-    PagedResponseWrapper<PedidoResponseDTO> response = new PagedResponseWrapper<>(pedidos);
+    PagedResponseWrapper<PedidoResponseDTO> response = new PagedResponseWrapper<>(true, pedidos);
     return ResponseEntity.ok(response);
   }
 

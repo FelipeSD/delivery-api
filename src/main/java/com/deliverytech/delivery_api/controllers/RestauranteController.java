@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -74,7 +75,7 @@ public class RestauranteController {
   public ResponseEntity<PagedResponseWrapper<RestauranteResponseDTO>> listarDisponiveis(
       @PageableDefault(size = 20) Pageable pageable) {
     Page<RestauranteResponseDTO> restaurantes = restauranteService.listarDisponiveis(pageable);
-    PagedResponseWrapper<RestauranteResponseDTO> response = new PagedResponseWrapper<>(restaurantes);
+    PagedResponseWrapper<RestauranteResponseDTO> response = new PagedResponseWrapper<>(true, restaurantes);
     return ResponseEntity.ok(response);
   }
 
@@ -84,7 +85,7 @@ public class RestauranteController {
   public ResponseEntity<PagedResponseWrapper<RestauranteResponseDTO>> listarPorCategoria(@PathVariable String categoria,
       @PageableDefault(size = 20) Pageable pageable) {
     Page<RestauranteResponseDTO> restaurantes = restauranteService.listarPorCategoria(categoria, pageable);
-    PagedResponseWrapper<RestauranteResponseDTO> response = new PagedResponseWrapper<>(restaurantes);
+    PagedResponseWrapper<RestauranteResponseDTO> response = new PagedResponseWrapper<>(true, restaurantes);
     return ResponseEntity.ok(response);
   }
 
@@ -96,11 +97,28 @@ public class RestauranteController {
       @ApiResponse(responseCode = "400", description = "Dados inválidos")
   })
   @PutMapping("/{id}")
-  public ResponseEntity<RestauranteResponseDTO> atualizarRestaurante(@PathVariable Long id,
+  public ResponseEntity<ApiResponseWrapper<RestauranteResponseDTO>> atualizarRestaurante(@PathVariable Long id,
       @Valid @RequestBody RestauranteDTO restaurante) {
     RestauranteResponseDTO atualizado = restauranteService.atualizar(id, restaurante);
     if (atualizado != null) {
-      return ResponseEntity.ok(atualizado);
+      ApiResponseWrapper<RestauranteResponseDTO> response = new ApiResponseWrapper<>(true, atualizado, "Restaurante atualizado com sucesso");
+      return ResponseEntity.ok(response);
+    }
+    return ResponseEntity.notFound().build();
+  }
+
+  // PUT /api/restaurantes/{id}/status - Ativar/Desativar restaurante
+  @Operation(summary = "Ativar/Desativar restaurante", description = "Altera o status de ativo/inativo de um restaurante")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Status alterado com sucesso"),
+      @ApiResponse(responseCode = "404", description = "Restaurante não encontrado")
+  })
+  @PatchMapping("/{id}/status")
+  public ResponseEntity<ApiResponseWrapper<RestauranteResponseDTO>> alterarStatusRestaurante(@PathVariable Long id) {
+    RestauranteResponseDTO atualizado = restauranteService.alterarStatus(id);
+    if (atualizado != null) {
+      ApiResponseWrapper<RestauranteResponseDTO> response = new ApiResponseWrapper<>(true, atualizado, "Status alterado com sucesso");
+      return ResponseEntity.ok(response);
     }
     return ResponseEntity.notFound().build();
   }

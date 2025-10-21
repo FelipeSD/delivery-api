@@ -48,7 +48,8 @@ public class ProdutoController {
       @ApiResponse(responseCode = "404", description = "Restaurante não encontrado", content = @Content)
   })
   @PostMapping("/produtos")
-  public ResponseEntity<ApiResponseWrapper<ProdutoResponseDTO>> cadastrarProduto(@Valid @RequestBody ProdutoDTO produtoDTO) {
+  public ResponseEntity<ApiResponseWrapper<ProdutoResponseDTO>> cadastrarProduto(
+      @Valid @RequestBody ProdutoDTO produtoDTO) {
     ProdutoResponseDTO produto = produtoService.cadastrarProduto(produtoDTO);
     ApiResponseWrapper<ProdutoResponseDTO> response = new ApiResponseWrapper<>(true, produto,
         "Produto criado com sucesso");
@@ -77,7 +78,7 @@ public class ProdutoController {
   public ResponseEntity<PagedResponseWrapper<ProdutoResponseDTO>> listarPorRestaurante(@PathVariable Long restauranteId,
       @PageableDefault(size = 20) Pageable pageable) {
     Page<ProdutoResponseDTO> produtos = produtoService.listarPorRestaurante(restauranteId, pageable);
-    PagedResponseWrapper<ProdutoResponseDTO> response = new PagedResponseWrapper<>(produtos);
+    PagedResponseWrapper<ProdutoResponseDTO> response = new PagedResponseWrapper<>(true, produtos);
     return ResponseEntity.ok(response);
   }
 
@@ -88,7 +89,7 @@ public class ProdutoController {
   })
   @PutMapping("/produtos/{id}")
   public ResponseEntity<ApiResponseWrapper<ProdutoResponseDTO>> atualizarProduto(@PathVariable Long id,
-    @Valid  @RequestBody ProdutoDTO produtoDTO) {
+      @Valid @RequestBody ProdutoDTO produtoDTO) {
     ProdutoResponseDTO produto = produtoService.atualizarProduto(id, produtoDTO);
     ApiResponseWrapper<ProdutoResponseDTO> response = new ApiResponseWrapper<>(true, produto,
         "Produto atualizado com sucesso");
@@ -110,7 +111,7 @@ public class ProdutoController {
   public ResponseEntity<PagedResponseWrapper<ProdutoResponseDTO>> produtosPorCategoria(@PathVariable String categoria,
       @PageableDefault(size = 20) Pageable pageable) {
     Page<ProdutoResponseDTO> produtos = produtoService.buscarPorCategoria(categoria, pageable);
-    PagedResponseWrapper<ProdutoResponseDTO> response = new PagedResponseWrapper<>(produtos);
+    PagedResponseWrapper<ProdutoResponseDTO> response = new PagedResponseWrapper<>(true, produtos);
     return ResponseEntity.ok(response);
   }
 
@@ -133,7 +134,7 @@ public class ProdutoController {
       produtos = Page.empty(pageable);
     }
 
-    PagedResponseWrapper<ProdutoResponseDTO> response = new PagedResponseWrapper<>(produtos);
+    PagedResponseWrapper<ProdutoResponseDTO> response = new PagedResponseWrapper<>(true, produtos);
     return ResponseEntity.ok(response);
   }
 }

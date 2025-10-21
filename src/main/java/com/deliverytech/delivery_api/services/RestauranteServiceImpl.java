@@ -142,6 +142,16 @@ public class RestauranteServiceImpl implements RestauranteService {
   }
 
   @Override
+  @Transactional
+  public RestauranteResponseDTO alterarStatus(Long id) {
+    Restaurante r = restauranteRepository.findById(id)
+        .orElseThrow(() -> new EntityNotFoundException("Restaurante não encontrado com ID: " + id));
+    r.setAtivo(!r.isAtivo()); 
+    Restaurante atualizado = restauranteRepository.save(r);
+    return converterParaResponseDTO(atualizado);
+  }
+
+  @Override
   @Transactional(readOnly = true)
   public TaxaEntregaResponseDTO calcularTaxaEntrega(Long id, String cep) {
     // 1. Buscar restaurante

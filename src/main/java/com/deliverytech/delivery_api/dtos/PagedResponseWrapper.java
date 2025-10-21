@@ -9,6 +9,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Schema(description = "Wrapper para respostas paginadas")
 public class PagedResponseWrapper<T> {
 
+  @Schema(description = "Indica se a operação foi bem-sucedida", example = "true")
+  private boolean success;
+
   @Schema(description = "Lista de itens da página atual")
   private List<T> content;
 
@@ -18,7 +21,8 @@ public class PagedResponseWrapper<T> {
   @Schema(description = "Links de navegação")
   private PageLinks links;
 
-  public PagedResponseWrapper(Page<T> page) {
+  public PagedResponseWrapper(boolean success, Page<T> page) {
+    this.success = success;
     this.content = page.getContent();
     this.page = new PageInfo(
         page.getNumber(),
@@ -128,6 +132,10 @@ public class PagedResponseWrapper<T> {
     public String getPrev() {
       return prev;
     }
+  }
+
+  public boolean isSuccess() {
+    return success;
   }
 
   public List<T> getContent() {

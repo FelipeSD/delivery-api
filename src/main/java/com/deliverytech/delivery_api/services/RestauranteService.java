@@ -57,6 +57,12 @@ public interface RestauranteService {
   RestauranteResponseDTO alterarStatus(Long id, boolean ativo);
 
   /**
+   * Alterar status ativo/inativo do restaurante
+   * @return RestauranteResponseDTO atualizado ou null se não encontrado
+   */
+  RestauranteResponseDTO alterarStatus(Long id);
+
+  /**
    * Calcular taxa de entrega para um CEP
    * 
    * @return Taxa de entrega 

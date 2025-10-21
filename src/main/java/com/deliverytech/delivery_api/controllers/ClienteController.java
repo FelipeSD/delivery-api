@@ -1,6 +1,6 @@
 package com.deliverytech.delivery_api.controllers;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -69,7 +69,7 @@ public class ClienteController {
   public ResponseEntity<PagedResponseWrapper<ClienteResponseDTO>> listarClientesAtivos(
       @PageableDefault(size = 20) Pageable pageable) {
     Page<ClienteResponseDTO> clientes = clienteService.listarClientesAtivos(pageable);
-    PagedResponseWrapper<ClienteResponseDTO> response = new PagedResponseWrapper<>(clientes);
+    PagedResponseWrapper<ClienteResponseDTO> response = new PagedResponseWrapper<>(true, clientes);
     return ResponseEntity.ok(response);
   }
 
