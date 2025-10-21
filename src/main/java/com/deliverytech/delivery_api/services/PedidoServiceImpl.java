@@ -25,6 +25,8 @@ import com.deliverytech.delivery_api.entities.Restaurante;
 import com.deliverytech.delivery_api.enums.StatusPedido;
 import com.deliverytech.delivery_api.exceptions.BusinessException;
 import com.deliverytech.delivery_api.exceptions.EntityNotFoundException;
+import com.deliverytech.delivery_api.exceptions.InactiveEntityException;
+import com.deliverytech.delivery_api.exceptions.OrderStatusException;
 import com.deliverytech.delivery_api.repositories.ClienteRepository;
 import com.deliverytech.delivery_api.repositories.PedidoRepository;
 import com.deliverytech.delivery_api.repositories.ProdutoRepository;
@@ -54,18 +56,18 @@ public class PedidoServiceImpl implements PedidoService {
   public PedidoResponseDTO criarPedido(PedidoDTO dto) {
     // 1. Validar cliente existe e está ativo
     Cliente cliente = clienteRepository.findById(dto.getClienteId())
-        .orElseThrow(() -> new EntityNotFoundException("Cliente não encontrado"));
+        .orElseThrow(() -> new EntityNotFoundException("Cliente", dto.getClienteId()));
 
     if (!cliente.isAtivo()) {
-      throw new BusinessException("Cliente inativo não pode fazer pedidos");
+      throw new InactiveEntityException("Cliente", dto.getClienteId());
     }
 
     // 2. Validar restaurante existe e está ativo
     Restaurante restaurante = restauranteRepository.findById(dto.getRestauranteId())
-        .orElseThrow(() -> new EntityNotFoundException("Restaurante não encontrado"));
+        .orElseThrow(() -> new EntityNotFoundException("Restaurante", dto.getRestauranteId()));
 
     if (!restaurante.isAtivo()) {
-      throw new BusinessException("Restaurante não está disponível");
+      throw new InactiveEntityException("Restaurante", dto.getRestauranteId());
     }
 
     // 3. Validar todos os produtos existem e estão disponíveis
@@ -74,14 +76,15 @@ public class PedidoServiceImpl implements PedidoService {
 
     for (ItemPedidoDTO itemDTO : dto.getItens()) {
       Produto produto = produtoRepository.findById(itemDTO.getProdutoId())
-          .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado: " + itemDTO.getProdutoId()));
+          .orElseThrow(() -> new EntityNotFoundException("Produto", itemDTO.getProdutoId()));
 
       if (!produto.isDisponivel()) {
-        throw new BusinessException("Produto indisponível: " + produto.getNome());
+        throw new BusinessException("Produto indisponível:", produto.getNome());
       }
 
       if (!produto.getRestaurante().getId().equals(dto.getRestauranteId())) {
-        throw new BusinessException("Produto não pertence ao restaurante selecionado");
+        throw new BusinessException("Produto não pertence ao restaurante selecionado",
+            produto.getRestaurante().getNome());
       }
 
       // Criar item do pedido
@@ -130,7 +133,7 @@ public class PedidoServiceImpl implements PedidoService {
   @Transactional(readOnly = true)
   public PedidoResponseDTO buscarPedidoPorId(Long id) {
     Pedido pedido = pedidoRepository.findById(id)
-        .orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado com ID: " + id));
+        .orElseThrow(() -> new EntityNotFoundException("Pedido", id));
 
     return modelMapper.map(pedido, PedidoResponseDTO.class);
   }
@@ -148,11 +151,11 @@ public class PedidoServiceImpl implements PedidoService {
   @Override
   public PedidoResponseDTO atualizarStatusPedido(Long id, StatusPedido novoStatus) {
     Pedido pedido = pedidoRepository.findById(id)
-        .orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado"));
+        .orElseThrow(() -> new EntityNotFoundException("Pedido", id));
 
     // Validar transições de status permitidas
     if (!isTransicaoValida(pedido.getStatus(), novoStatus)) {
-      throw new BusinessException("Transição de status inválida: " + pedido.getStatus() + " -> " + novoStatus);
+      throw new OrderStatusException(id, pedido.getStatus().name(), novoStatus.name());
     }
 
     pedido.setStatus(novoStatus);
@@ -168,7 +171,7 @@ public class PedidoServiceImpl implements PedidoService {
 
     for (ItemPedidoDTO item : itens) {
       Produto produto = produtoRepository.findById(item.getProdutoId())
-          .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado"));
+          .orElseThrow(() -> new EntityNotFoundException("Produto", item.getProdutoId()));
 
       BigDecimal subtotalItem = produto.getPreco()
           .multiply(BigDecimal.valueOf(item.getQuantidade()));
@@ -181,11 +184,10 @@ public class PedidoServiceImpl implements PedidoService {
   @Override
   public void cancelarPedido(Long id) {
     Pedido pedido = pedidoRepository.findById(id)
-        .orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado"));
+        .orElseThrow(() -> new EntityNotFoundException("Pedido", id));
 
     if (!podeSerCancelado(pedido.getStatus())) {
-      throw new BusinessException("Pedido não pode ser cancelado no status: " +
-          pedido.getStatus());
+      throw new OrderStatusException(id, pedido.getStatus().name(), "CANCELADO");
     }
 
     pedido.setStatus(StatusPedido.CANCELADO);

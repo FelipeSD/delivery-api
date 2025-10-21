@@ -18,8 +18,8 @@ import com.deliverytech.delivery_api.dtos.RestauranteResponseDTO;
 import com.deliverytech.delivery_api.dtos.TaxaEntregaResponseDTO;
 import com.deliverytech.delivery_api.entities.Produto;
 import com.deliverytech.delivery_api.entities.Restaurante;
-import com.deliverytech.delivery_api.exceptions.BusinessException;
 import com.deliverytech.delivery_api.exceptions.EntityNotFoundException;
+import com.deliverytech.delivery_api.exceptions.ValidationException;
 import com.deliverytech.delivery_api.repositories.ProdutoRepository;
 import com.deliverytech.delivery_api.repositories.RestauranteRepository;
 
@@ -66,7 +66,7 @@ public class RestauranteServiceImpl implements RestauranteService {
   @Transactional(readOnly = true)
   public RestauranteResponseDTO buscarPorId(Long id) {
     Restaurante restaurante = restauranteRepository.findById(id)
-        .orElseThrow(() -> new EntityNotFoundException("Restaurante não encontrado com ID: " + id));
+        .orElseThrow(() -> new EntityNotFoundException("Restaurante", id));
 
     return converterParaResponseDTO(restaurante);
   }
@@ -85,7 +85,7 @@ public class RestauranteServiceImpl implements RestauranteService {
   @Transactional(readOnly = true)
   public Page<RestauranteResponseDTO> listarPorCategoria(String categoria, Pageable pageable) {
     if (categoria == null || categoria.trim().isEmpty()) {
-      throw new BusinessException("Categoria não pode ser vazia");
+      throw new ValidationException("Categoria não pode ser vazia");
     }
 
     Page<Restaurante> restaurantes = restauranteRepository.findByCategoriaAndAtivoTrue(categoria, pageable);
@@ -101,7 +101,7 @@ public class RestauranteServiceImpl implements RestauranteService {
   public RestauranteResponseDTO atualizar(Long id, RestauranteDTO restauranteDTO) {
     // 1. Buscar restaurante existente
     Restaurante restaurante = restauranteRepository.findById(id)
-        .orElseThrow(() -> new EntityNotFoundException("Restaurante não encontrado com ID: " + id));
+        .orElseThrow(() -> new EntityNotFoundException("Restaurante", id));
 
     // 2. Validar dados
     validarDadosRestaurante(restauranteDTO);
@@ -127,7 +127,7 @@ public class RestauranteServiceImpl implements RestauranteService {
   @Transactional
   public RestauranteResponseDTO alterarStatus(Long id, boolean ativo) {
     Restaurante restaurante = restauranteRepository.findById(id)
-        .orElseThrow(() -> new EntityNotFoundException("Restaurante não encontrado com ID: " + id));
+        .orElseThrow(() -> new EntityNotFoundException("Restaurante", id));
 
     // Se está desativando, verificar se há pedidos pendentes
     if (!ativo && restaurante.isAtivo()) {
@@ -145,7 +145,7 @@ public class RestauranteServiceImpl implements RestauranteService {
   @Transactional
   public RestauranteResponseDTO alterarStatus(Long id) {
     Restaurante r = restauranteRepository.findById(id)
-        .orElseThrow(() -> new EntityNotFoundException("Restaurante não encontrado com ID: " + id));
+        .orElseThrow(() -> new EntityNotFoundException("Restaurante", id));
     r.setAtivo(!r.isAtivo()); 
     Restaurante atualizado = restauranteRepository.save(r);
     return converterParaResponseDTO(atualizado);
@@ -156,20 +156,20 @@ public class RestauranteServiceImpl implements RestauranteService {
   public TaxaEntregaResponseDTO calcularTaxaEntrega(Long id, String cep) {
     // 1. Buscar restaurante
     Restaurante restaurante = restauranteRepository.findById(id)
-        .orElseThrow(() -> new EntityNotFoundException("Restaurante não encontrado com ID: " + id));
+        .orElseThrow(() -> new EntityNotFoundException("Restaurante", id));
 
     if (!restaurante.isAtivo()) {
-      throw new BusinessException("Restaurante não está disponível");
+      throw new ValidationException("Restaurante não está disponível");
     }
 
     // 2. Validar CEP
     if (cep == null || cep.trim().isEmpty()) {
-      throw new BusinessException("CEP é obrigatório");
+      throw new ValidationException("CEP é obrigatório");
     }
 
     String cepLimpo = cep.replaceAll("[^0-9]", "");
     if (cepLimpo.length() != 8) {
-      throw new BusinessException("CEP inválido");
+      throw new ValidationException("CEP inválido");
     }
 
     // 3. Calcular taxa (simulação - em produção seria integração com API de
@@ -196,7 +196,7 @@ public class RestauranteServiceImpl implements RestauranteService {
   @Transactional(readOnly = true)
   public Page<RestauranteResponseDTO> buscarPorNome(String nome, Pageable pageable) {
     if (nome == null || nome.trim().isEmpty()) {
-      throw new BusinessException("Nome para busca não pode ser vazio");
+      throw new ValidationException("Nome para busca não pode ser vazio");
     }
 
     Page<Restaurante> restaurantes = restauranteRepository
@@ -212,7 +212,7 @@ public class RestauranteServiceImpl implements RestauranteService {
   @Transactional(readOnly = true)
   public RestauranteResponseDTO buscarComProdutos(Long id) {
     Restaurante restaurante = restauranteRepository.findById(id)
-        .orElseThrow(() -> new EntityNotFoundException("Restaurante não encontrado com ID: " + id));
+        .orElseThrow(() -> new EntityNotFoundException("Restaurante", id));
 
     RestauranteResponseDTO response = converterParaResponseDTO(restaurante);
 
@@ -237,24 +237,24 @@ public class RestauranteServiceImpl implements RestauranteService {
 
   private void validarDadosRestaurante(RestauranteDTO restauranteDTO) {
     if (restauranteDTO.getNome() == null || restauranteDTO.getNome().trim().isEmpty()) {
-      throw new BusinessException("Nome do restaurante é obrigatório");
+      throw new ValidationException("Nome do restaurante é obrigatório");
     }
 
     if (restauranteDTO.getCnpj() == null || restauranteDTO.getCnpj().trim().isEmpty()) {
-      throw new BusinessException("CNPJ é obrigatório");
+      throw new ValidationException("CNPJ é obrigatório");
     }
 
     if (restauranteDTO.getEmail() == null || restauranteDTO.getEmail().trim().isEmpty()) {
-      throw new BusinessException("Email é obrigatório");
+      throw new ValidationException("Email é obrigatório");
     }
 
     if (restauranteDTO.getTaxaEntrega() == null ||
         restauranteDTO.getTaxaEntrega().compareTo(BigDecimal.ZERO) < 0) {
-      throw new BusinessException("Taxa de entrega inválida");
+      throw new ValidationException("Taxa de entrega inválida");
     }
 
     if (restauranteDTO.getCategoria() == null || restauranteDTO.getCategoria().trim().isEmpty()) {
-      throw new BusinessException("Categoria é obrigatória");
+      throw new ValidationException("Categoria é obrigatória");
     }
   }
 

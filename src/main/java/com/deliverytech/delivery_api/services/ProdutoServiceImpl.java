@@ -16,8 +16,10 @@ import com.deliverytech.delivery_api.dtos.ProdutoDTO;
 import com.deliverytech.delivery_api.dtos.ProdutoResponseDTO;
 import com.deliverytech.delivery_api.entities.Produto;
 import com.deliverytech.delivery_api.entities.Restaurante;
-import com.deliverytech.delivery_api.exceptions.BusinessException;
+import com.deliverytech.delivery_api.exceptions.ConflictException;
 import com.deliverytech.delivery_api.exceptions.EntityNotFoundException;
+import com.deliverytech.delivery_api.exceptions.InactiveEntityException;
+import com.deliverytech.delivery_api.exceptions.ValidationException;
 import com.deliverytech.delivery_api.repositories.ProdutoRepository;
 import com.deliverytech.delivery_api.repositories.RestauranteRepository;
 
@@ -39,11 +41,10 @@ public class ProdutoServiceImpl implements ProdutoService {
   public ProdutoResponseDTO cadastrarProduto(ProdutoDTO produtoDTO) {
     // 1. Validar restaurante existe e está ativo
     Restaurante restaurante = restauranteRepository.findById(produtoDTO.getRestauranteId())
-        .orElseThrow(() -> new EntityNotFoundException(
-            "Restaurante não encontrado com ID: " + produtoDTO.getRestauranteId()));
+        .orElseThrow(() -> new EntityNotFoundException("Restaurante", produtoDTO.getRestauranteId()));
 
     if (!restaurante.isAtivo()) {
-      throw new BusinessException("Não é possível cadastrar produtos para restaurante inativo");
+      throw new InactiveEntityException("Restaurante", produtoDTO.getRestauranteId());
     }
 
     // 2. Validar dados do produto
@@ -57,7 +58,7 @@ public class ProdutoServiceImpl implements ProdutoService {
         .anyMatch(p -> p.getNome().equalsIgnoreCase(produtoDTO.getNome()));
 
     if (nomeJaExiste) {
-      throw new BusinessException("Já existe um produto com este nome neste restaurante");
+      throw new ConflictException("Produto", "nome");
     }
 
     // 4. Criar e salvar produto
@@ -79,7 +80,7 @@ public class ProdutoServiceImpl implements ProdutoService {
   @Transactional(readOnly = true)
   public ProdutoResponseDTO buscarProdutoPorId(Long id) {
     Produto produto = produtoRepository.findById(id)
-        .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado com ID: " + id));
+        .orElseThrow(() -> new EntityNotFoundException("Produto", id));
 
     return converterParaResponseDTO(produto);
   }
@@ -89,7 +90,7 @@ public class ProdutoServiceImpl implements ProdutoService {
   public Page<ProdutoResponseDTO> listarPorRestaurante(Long restauranteId, Pageable pageable) {
     // Validar se restaurante existe
     if (!restauranteRepository.existsById(restauranteId)) {
-      throw new EntityNotFoundException("Restaurante não encontrado com ID: " + restauranteId);
+      throw new EntityNotFoundException("Restaurante", restauranteId);
     }
 
     Page<Produto> produtos = produtoRepository.findByRestauranteIdAndDisponivelTrue(restauranteId, pageable);
@@ -104,7 +105,7 @@ public class ProdutoServiceImpl implements ProdutoService {
   @Transactional(readOnly = true)
   public Page<ProdutoResponseDTO> buscarPorCategoria(String categoria, Pageable pageable) {
     if (categoria == null || categoria.trim().isEmpty()) {
-      throw new BusinessException("Categoria não pode ser vazia");
+      throw new ValidationException("Categoria não pode ser vazia");
     }
 
     Page<Produto> produtos = produtoRepository.findByCategoriaAndDisponivelTrue(categoria, pageable);
@@ -120,7 +121,7 @@ public class ProdutoServiceImpl implements ProdutoService {
   public ProdutoResponseDTO atualizarProduto(Long id, ProdutoDTO produtoDTO) {
     // 1. Buscar produto existente
     Produto produto = produtoRepository.findById(id)
-        .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado com ID: " + id));
+        .orElseThrow(() -> new EntityNotFoundException("Produto", id));
 
     // 2. Validar dados
     validarDadosProduto(produtoDTO);
@@ -135,7 +136,7 @@ public class ProdutoServiceImpl implements ProdutoService {
           .anyMatch(p -> p.getNome().equalsIgnoreCase(produtoDTO.getNome()));
 
       if (nomeJaExiste) {
-        throw new BusinessException("Já existe outro produto com este nome neste restaurante");
+        throw new ConflictException("Produto", "nome");
       }
     }
 
@@ -157,7 +158,7 @@ public class ProdutoServiceImpl implements ProdutoService {
   @Transactional
   public ProdutoResponseDTO alterarDisponibilidade(Long id, boolean disponivel) {
     Produto produto = produtoRepository.findById(id)
-        .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado com ID: " + id));
+        .orElseThrow(() -> new EntityNotFoundException("Produto", id));
 
     produto.setDisponivel(disponivel);
     Produto produtoAtualizado = produtoRepository.save(produto);
@@ -170,15 +171,15 @@ public class ProdutoServiceImpl implements ProdutoService {
   public Page<ProdutoResponseDTO> buscarPorFaixaPreco(BigDecimal precoMin, BigDecimal precoMax, Pageable pageable) {
     // Validações
     if (precoMin == null || precoMax == null) {
-      throw new BusinessException("Preço mínimo e máximo são obrigatórios");
+      throw new ValidationException("Preço mínimo e máximo são obrigatórios");
     }
 
     if (precoMin.compareTo(BigDecimal.ZERO) < 0) {
-      throw new BusinessException("Preço mínimo não pode ser negativo");
+      throw new ValidationException("Preço mínimo não pode ser negativo");
     }
 
     if (precoMin.compareTo(precoMax) > 0) {
-      throw new BusinessException("Preço mínimo não pode ser maior que o preço máximo");
+      throw new ValidationException("Preço mínimo não pode ser maior que o preço máximo");
     }
 
     Page<Produto> produtos = produtoRepository.findByPrecoBetweenAndDisponivelTrue(precoMin, precoMax, pageable);
@@ -195,11 +196,11 @@ public class ProdutoServiceImpl implements ProdutoService {
       Pageable pageable) {
     // Validar restaurante existe
     if (!restauranteRepository.existsById(restauranteId)) {
-      throw new EntityNotFoundException("Restaurante não encontrado com ID: " + restauranteId);
+      throw new EntityNotFoundException("Restaurante", restauranteId);
     }
 
     if (categoria == null || categoria.trim().isEmpty()) {
-      throw new BusinessException("Categoria não pode ser vazia");
+      throw new ValidationException("Categoria não pode ser vazia");
     }
 
     List<Produto> produtos = produtoRepository
@@ -218,15 +219,15 @@ public class ProdutoServiceImpl implements ProdutoService {
 
   private void validarDadosProduto(ProdutoDTO produtoDTO) {
     if (produtoDTO.getNome() == null || produtoDTO.getNome().trim().isEmpty()) {
-      throw new BusinessException("Nome do produto é obrigatório");
+      throw new ValidationException("Nome do produto é obrigatório");
     }
 
     if (produtoDTO.getPreco() == null || produtoDTO.getPreco().compareTo(BigDecimal.ZERO) <= 0) {
-      throw new BusinessException("Preço deve ser maior que zero");
+      throw new ValidationException("Preço deve ser maior que zero");
     }
 
     if (produtoDTO.getCategoria() == null || produtoDTO.getCategoria().trim().isEmpty()) {
-      throw new BusinessException("Categoria é obrigatória");
+      throw new ValidationException("Categoria é obrigatória");
     }
   }
 

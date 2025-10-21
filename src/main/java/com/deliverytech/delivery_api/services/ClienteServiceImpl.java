@@ -9,15 +9,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.deliverytech.delivery_api.dtos.ClienteDTO;
 import com.deliverytech.delivery_api.dtos.ClienteResponseDTO;
 import com.deliverytech.delivery_api.entities.Cliente;
-import com.deliverytech.delivery_api.exceptions.BusinessException;
+import com.deliverytech.delivery_api.exceptions.ConflictException;
 import com.deliverytech.delivery_api.exceptions.EntityNotFoundException;
 import com.deliverytech.delivery_api.repositories.ClienteRepository;
-
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional
@@ -32,7 +31,7 @@ public class ClienteServiceImpl implements ClienteService {
   public ClienteResponseDTO cadastrarCliente(ClienteDTO dto) {
     // Validar email único
     if (clienteRepository.existsByEmail(dto.getEmail())) {
-      throw new BusinessException("Email já cadastrado: " + dto.getEmail());
+      throw new ConflictException("Client", "email");
     }
 
     // Converter DTO para entidade
@@ -50,7 +49,7 @@ public class ClienteServiceImpl implements ClienteService {
   @Transactional(readOnly = true)
   public ClienteResponseDTO buscarClientePorId(Long id) {
     Cliente cliente = clienteRepository.findById(id)
-        .orElseThrow(() -> new EntityNotFoundException("Cliente não encontrado com ID: " + id));
+        .orElseThrow(() -> new EntityNotFoundException("Cliente", id));
 
     return modelMapper.map(cliente, ClienteResponseDTO.class);
   }
@@ -59,7 +58,7 @@ public class ClienteServiceImpl implements ClienteService {
   @Transactional(readOnly = true)
   public ClienteResponseDTO buscarClientePorEmail(String email) {
     Cliente cliente = clienteRepository.findByEmail(email)
-        .orElseThrow(() -> new EntityNotFoundException("Cliente não encontrado com email: " + email));
+        .orElseThrow(() -> new EntityNotFoundException("Cliente", 0L));
 
     return modelMapper.map(cliente, ClienteResponseDTO.class);
   }
@@ -67,12 +66,12 @@ public class ClienteServiceImpl implements ClienteService {
   @Override
   public ClienteResponseDTO atualizarCliente(Long id, ClienteDTO dto) {
     Cliente cliente = clienteRepository.findById(id)
-        .orElseThrow(() -> new EntityNotFoundException("Cliente não encontrado com ID: " + id));
+        .orElseThrow(() -> new EntityNotFoundException("Cliente", id));
 
     // Validar email único (se mudou)
     if (!cliente.getEmail().equals(dto.getEmail()) &&
         clienteRepository.existsByEmail(dto.getEmail())) {
-      throw new BusinessException("Email já cadastrado: " + dto.getEmail());
+      throw new ConflictException("Client", "email");
     }
 
     // Atualizar dados
@@ -88,7 +87,7 @@ public class ClienteServiceImpl implements ClienteService {
   @Override
   public ClienteResponseDTO ativarDesativarCliente(Long id) {
     Cliente cliente = clienteRepository.findById(id)
-        .orElseThrow(() -> new EntityNotFoundException("Cliente não encontrado com ID: " + id));
+        .orElseThrow(() -> new EntityNotFoundException("Cliente", id));
 
     cliente.setAtivo(!cliente.isAtivo());
     Cliente clienteAtualizado = clienteRepository.save(cliente);
