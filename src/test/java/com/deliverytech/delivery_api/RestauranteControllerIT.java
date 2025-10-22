@@ -59,6 +59,7 @@ class RestauranteControllerIT {
     restauranteDTO.setTaxaEntrega(new BigDecimal("5.50"));
     restauranteDTO.setTempoEntregaMin(10);
     restauranteDTO.setTempoEntregaMax(20);
+    restauranteDTO.setHorarioFuncionamento("09:00-22:00");
 
     // Criar restaurante para testes de busca
     Restaurante restaurante = new Restaurante();
@@ -71,6 +72,7 @@ class RestauranteControllerIT {
     restaurante.setTaxaEntrega(new BigDecimal("4.00"));
     restaurante.setTempoEntregaMin(10);
     restaurante.setTempoEntregaMax(20);
+    restaurante.setHorarioFuncionamento("09:00-22:00");
 
     restaurante.setAtivo(true);
     restauranteSalvo = restauranteRepository.save(restaurante);

@@ -2,6 +2,11 @@ package com.deliverytech.delivery_api.dtos;
 
 import java.math.BigDecimal;
 
+import com.deliverytech.delivery_api.validations.ValidCategoria;
+import com.deliverytech.delivery_api.validations.ValidHorarioFuncionamento;
+import com.deliverytech.delivery_api.validations.ValidTelefone;
+
+import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -17,35 +22,43 @@ import jakarta.validation.constraints.Size;
 public class RestauranteDTO {
 
   @Schema(description = "Nome do restaurante", example = "Restaurante Bom Sabor", required = true)
+  @Size(max = 100, message = "Nome deve ter no máximo 100 caracteres")
   @NotBlank(message = "Nome é obrigatório")
   private String nome;
 
   @Schema(description = "CNPJ do restaurante", example = "12345678000199", required = true)
   @NotBlank(message = "CNPJ é obrigatório")
+  @Size(min = 14, max = 14, message = "CNPJ deve conter 14 dígitos")
   @Pattern(regexp = "\\d{14}", message = "CNPJ deve conter 14 dígitos")
   private String cnpj;
 
   @Schema(description = "Email do restaurante", example = "email@test.com", required = true)
   @NotBlank(message = "Email é obrigatório")
+  @Size(max = 100, message = "Email deve ter no máximo 100 caracteres")
   @Email(message = "Email inválido")
   private String email;
 
   @Schema(description = "Telefone do restaurante", example = "1699999-9999", required = true)
   @NotBlank(message = "Telefone é obrigatório")
-  @Pattern(regexp = "\\d{10,11}", message = "Telefone deve ter 10 ou 11 dígitos")
+  @ValidTelefone
   private String telefone;
 
   @Schema(description = "Categoria do restaurante", example = "Italiana", allowableValues = {
       "Italiana", "Brasileira",
       "Japonesa", "Mexicana", "Árabe" }, required = true)
   @NotBlank(message = "Categoria é obrigatória")
-  @Pattern(regexp = "Italiana|Brasileira|Japonesa|Mexicana|Árabe", message = "Categoria deve ser uma das seguintes: Italiana, Brasileira, Japonesa, Mexicana, Árabe")
+  @ValidCategoria
   private String categoria;
 
   @Schema(description = "Taxa de entrega do restaurante", example = "5.00", required = true)
   @NotNull(message = "Taxa de entrega é obrigatória")
   @DecimalMin(value = "0.0", message = "Taxa de entrega não pode ser negativa")
+  @DecimalMax(value = "50.0", message = "Taxa de entrega não pode exceder R$ 50,00")
   private BigDecimal taxaEntrega;
+
+  @Schema(description = "Horário de funcionamento do restaurante no formato HH:mm-HH:mm", example = "10:00-22:00", required = true)
+  @ValidHorarioFuncionamento
+  private String horarioFuncionamento;
 
   @Schema(description = "Tempo mínimo de entrega em minutos", example = "30", required = true)
   @Min(value = 10, message = "Tempo mínimo é 10 minutos")
@@ -68,9 +81,12 @@ public class RestauranteDTO {
   private String cidade;
 
   @Schema(description = "Estado onde o restaurante está localizado", example = "SP", required = true)
+  @Size(min = 2, max = 2, message = "Estado deve conter 2 caracteres")
   private String estado;
 
   @Schema(description = "CEP do restaurante", example = "12345000", required = true)
+  @Pattern(regexp = "\\d{8}", message = "CEP deve conter 8 dígitos")
+  @Size(min = 8, max = 8, message = "CEP deve conter 8 dígitos")
   private String cep;
 
   @Schema(description = "Indica se o restaurante está ativo", example = "true", defaultValue = "true")
@@ -179,6 +195,14 @@ public class RestauranteDTO {
 
   public void setCep(String cep) {
     this.cep = cep;
+  }
+
+  public String getHorarioFuncionamento() {
+    return horarioFuncionamento;
+  }
+
+  public void setHorarioFuncionamento(String horarioFuncionamento) {
+    this.horarioFuncionamento = horarioFuncionamento;
   }
 
   public boolean isAtivo() {

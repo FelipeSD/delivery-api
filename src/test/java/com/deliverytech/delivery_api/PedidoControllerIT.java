@@ -109,6 +109,9 @@ class PedidoControllerIT {
     pedidoDTO.setClienteId(clienteSalvo.getId());
     pedidoDTO.setRestauranteId(restauranteSalvo.getId());
     pedidoDTO.setEnderecoEntrega("Rua A, 123 - São Paulo/SP");
+    pedidoDTO.setCep("46464584");
+    pedidoDTO.setObservacoes("Por favor, entregar após as 18h");
+    pedidoDTO.setFormaPagamento("PIX");
 
     List<ItemPedidoDTO> itens = new ArrayList<>();
     ItemPedidoDTO item = new ItemPedidoDTO();
@@ -127,6 +130,8 @@ class PedidoControllerIT {
     pedido.setSubtotal(new BigDecimal("91.80"));
     pedido.setTaxaEntrega(new BigDecimal("8.50"));
     pedido.setValorTotal(new BigDecimal("100.30"));
+    pedido.setCep("46464584");
+    pedido.setFormaPagamento("PIX");
     pedidoSalvo = pedidoRepository.save(pedido);
   }
 

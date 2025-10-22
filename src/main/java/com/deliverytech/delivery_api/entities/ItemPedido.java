@@ -20,6 +20,7 @@ public class ItemPedido {
     private int quantidade;
     private BigDecimal precoUnitario;
     private BigDecimal subtotal;
+    private String observacoes;
 
     @ManyToOne
     @JoinColumn(name = "pedido_id")

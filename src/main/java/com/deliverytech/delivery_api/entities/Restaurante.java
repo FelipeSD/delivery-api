@@ -24,6 +24,7 @@ public class Restaurante {
     private String estado;
     private String endereco;
     private String telefone;
+    private String horarioFuncionamento;
     private BigDecimal taxaEntrega;
     private String cep;
     private Integer tempoEntregaMin;
