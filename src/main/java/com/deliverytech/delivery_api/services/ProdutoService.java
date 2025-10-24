@@ -49,4 +49,9 @@ public interface ProdutoService {
    * Buscar produtos por restaurante e categoria
    */
   Page<ProdutoResponseDTO> buscarPorRestauranteECategoria(Long restauranteId, String categoria, Pageable pageable);
+
+  /**
+   * Deletar produto
+   */
+  void deletarProduto(Long id);
 }

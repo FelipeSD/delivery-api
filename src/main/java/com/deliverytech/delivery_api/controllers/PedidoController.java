@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -50,6 +51,7 @@ public class PedidoController {
       @ApiResponse(responseCode = "404", description = "Cliente ou restaurante não encontrado")
   })
   @PostMapping
+  @PreAuthorize("hasRole('CLIENTE')")
   public ResponseEntity<ApiResponseWrapper<PedidoResponseDTO>> criarPedido(@Valid @RequestBody PedidoDTO dto) {
     PedidoResponseDTO pedido = pedidoService.criarPedido(dto);
     ApiResponseWrapper<PedidoResponseDTO> response = new ApiResponseWrapper<>(true, pedido,
@@ -64,6 +66,7 @@ public class PedidoController {
       @ApiResponse(responseCode = "404", description = "Pedido não encontrado")
   })
   @GetMapping("/{id}")
+  @PreAuthorize("hasRole('ADMIN') or hasRole('RESTAURANTE') or (hasRole('CLIENTE') and @pedidoService.isOwner(#id))")
   public ResponseEntity<ApiResponseWrapper<PedidoResponseDTO>> buscarPorId(@PathVariable Long id) {
     PedidoResponseDTO pedido = pedidoService.buscarPedidoPorId(id);
     ApiResponseWrapper<PedidoResponseDTO> response = new ApiResponseWrapper<>(true, pedido,
@@ -77,10 +80,26 @@ public class PedidoController {
       @ApiResponse(responseCode = "404", description = "Cliente não encontrado")
   })
   @GetMapping("/cliente/{clienteId}")
+  @PreAuthorize("hasRole('ADMIN') or (hasRole('CLIENTE') and #clienteId == principal.id)")
   public ResponseEntity<PagedResponseWrapper<PedidoResponseDTO>> buscarPorCliente(
       @PathVariable Long clienteId,
       @PageableDefault(size = 20) Pageable pageable) {
     Page<PedidoResponseDTO> pedidos = pedidoService.buscarPedidosPorCliente(clienteId, pageable);
+    PagedResponseWrapper<PedidoResponseDTO> response = new PagedResponseWrapper<>(true, pedidos);
+    return ResponseEntity.ok(response);
+  }
+
+  @Operation(summary = "Listar pedidos por restaurante", description = "Retorna todos os pedidos feitos para um restaurante específico")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Lista de pedidos retornada com sucesso"),
+      @ApiResponse(responseCode = "404", description = "Restaurante não encontrado")
+  })
+  @GetMapping("/restaurante/{restauranteId}")
+  @PreAuthorize("hasRole('ADMIN') or (hasRole('RESTAURANTE') and #restauranteId == principal.id)")
+  public ResponseEntity<PagedResponseWrapper<PedidoResponseDTO>> buscarPorRestaurante(
+      @PathVariable Long restauranteId,
+      @PageableDefault(size = 20) Pageable pageable) {
+    Page<PedidoResponseDTO> pedidos = pedidoService.buscarPedidosPorRestaurante(restauranteId, pageable);
     PagedResponseWrapper<PedidoResponseDTO> response = new PagedResponseWrapper<>(true, pedidos);
     return ResponseEntity.ok(response);
   }
@@ -92,6 +111,7 @@ public class PedidoController {
       @ApiResponse(responseCode = "404", description = "Pedido não encontrado")
   })
   @PatchMapping("/{id}/status")
+  @PreAuthorize("hasRole('ADMIN') or hasRole('RESTAURANTE')")
   public ResponseEntity<ApiResponseWrapper<PedidoResponseDTO>> atualizarStatus(
       @PathVariable Long id,
       @Valid @RequestBody StatusPedidoDTO statusDTO) {
@@ -108,6 +128,7 @@ public class PedidoController {
       @ApiResponse(responseCode = "400", description = "Pedido não pode ser cancelado")
   })
   @DeleteMapping("/{id}")
+  @PreAuthorize("hasRole('ADMIN') or (hasRole('CLIENTE') and @pedidoService.isOwner(#id))")
   public ResponseEntity<ApiResponseWrapper<Void>> cancelarPedido(@PathVariable Long id) {
     pedidoService.cancelarPedido(id);
     ApiResponseWrapper<Void> response = new ApiResponseWrapper<>(true, null, "Pedido cancelado com sucesso");

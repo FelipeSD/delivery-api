@@ -242,4 +242,11 @@ public class ProdutoServiceImpl implements ProdutoService {
 
     return dto;
   }
+
+  @Override
+  public void deletarProduto(Long id) {
+    Produto produto = produtoRepository.findById(id)
+        .orElseThrow(() -> new EntityNotFoundException("Produto", id));
+    produtoRepository.delete(produto);
+  }
 }

@@ -23,6 +23,11 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
   // Buscar pedidos por cliente ID
   Page<Pedido> findByClienteIdOrderByDataPedidoDesc(Long clienteId, Pageable pageable);
 
+  // Buscar pedidos por restaurante ID
+  // @Query("SELECT p FROM Pedido p WHERE p.restaurante.id = :restauranteId ORDER BY p.dataPedido DESC")
+  // Page<Pedido> findByRestauranteId(@Param("restauranteId") Long restauranteId, Pageable pageable);
+  Page<Pedido> findByRestauranteIdOrderByDataPedidoDesc(Long restauranteId, Pageable pageable);
+
   // Buscar por status
   Page<Pedido> findByStatusOrderByDataPedidoDesc(StatusPedido status, Pageable pageable);
 
@@ -39,10 +44,6 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
   @Query("SELECT p FROM Pedido p WHERE p.dataPedido >= :inicio AND p.dataPedido < :fim ORDER BY p.dataPedido DESC")
   Page<Pedido> findPedidosDoDia(@Param("inicio") LocalDateTime inicio, @Param("fim") LocalDateTime fim,
       Pageable pageable);
-
-  // Buscar pedidos por restaurante
-  @Query("SELECT p FROM Pedido p WHERE p.restaurante.id = :restauranteId ORDER BY p.dataPedido DESC")
-  Page<Pedido> findByRestauranteId(@Param("restauranteId") Long restauranteId, Pageable pageable);
 
   // Relatório - pedidos por status
   @Query("SELECT p.status, COUNT(p) FROM Pedido p GROUP BY p.status")

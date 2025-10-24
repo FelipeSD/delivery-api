@@ -48,6 +48,8 @@ public class DataLoader implements CommandLineRunner {
     System.out.println("=== CARGA DE DADOS CONCLUÍDA ===");
   }
 
+  
+
   private void inserirClientes() {
     System.out.println("--- Inserindo Clientes ---");
     Cliente cliente1 = new Cliente();

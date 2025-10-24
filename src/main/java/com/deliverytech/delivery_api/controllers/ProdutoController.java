@@ -8,7 +8,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -48,6 +50,7 @@ public class ProdutoController {
       @ApiResponse(responseCode = "404", description = "Restaurante não encontrado", content = @Content)
   })
   @PostMapping("/produtos")
+  @PreAuthorize("hasRole('RESTAURANTE') or hasRole('ADMIN')")
   public ResponseEntity<ApiResponseWrapper<ProdutoResponseDTO>> cadastrarProduto(
       @Valid @RequestBody ProdutoDTO produtoDTO) {
     ProdutoResponseDTO produto = produtoService.cadastrarProduto(produtoDTO);
@@ -88,6 +91,7 @@ public class ProdutoController {
       @ApiResponse(responseCode = "404", description = "Produto não encontrado", content = @Content)
   })
   @PutMapping("/produtos/{id}")
+  @PreAuthorize("hasRole('ADMIN') or @produtoService.isOwner(#id)")
   public ResponseEntity<ApiResponseWrapper<ProdutoResponseDTO>> atualizarProduto(@PathVariable Long id,
       @Valid @RequestBody ProdutoDTO produtoDTO) {
     ProdutoResponseDTO produto = produtoService.atualizarProduto(id, produtoDTO);
@@ -98,6 +102,7 @@ public class ProdutoController {
 
   @Operation(summary = "Alterar disponibilidade do produto", description = "Marca um produto como disponível ou indisponível")
   @PatchMapping("/produtos/{id}/disponibilidade")
+  @PreAuthorize("hasRole('ADMIN') or @produtoService.isOwner(#id)")
   public ResponseEntity<ApiResponseWrapper<ProdutoResponseDTO>> alterarDisponibilidade(@PathVariable Long id,
       @RequestParam boolean disponivel) {
     ProdutoResponseDTO produto = produtoService.alterarDisponibilidade(id, disponivel);
@@ -136,5 +141,18 @@ public class ProdutoController {
 
     PagedResponseWrapper<ProdutoResponseDTO> response = new PagedResponseWrapper<>(true, produtos);
     return ResponseEntity.ok(response);
+  }
+
+  // DELETE /api/produtos/{id} - Deletar produto
+  @Operation(summary = "Deletar produto", description = "Remove um produto existente")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "204", description = "Produto deletado com sucesso"),
+      @ApiResponse(responseCode = "404", description = "Produto não encontrado", content = @Content)
+  })
+  @PreAuthorize("hasRole('ADMIN') or @produtoService.isOwner(#id)")
+  @DeleteMapping("/produtos/{id}")
+  public ResponseEntity<Void> deletarProduto(@PathVariable Long id) {
+    produtoService.deletarProduto(id);
+    return ResponseEntity.noContent().build();
   }
 }

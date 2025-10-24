@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -44,6 +45,7 @@ public class RestauranteController {
       @ApiResponse(responseCode = "400", description = "Dados inválidos")
   })
   @PostMapping
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<ApiResponseWrapper<RestauranteResponseDTO>> cadastrarRestaurante(
       @Valid @RequestBody RestauranteDTO restaurante) {
     RestauranteResponseDTO novo = restauranteService.cadastrar(restaurante);
@@ -97,11 +99,13 @@ public class RestauranteController {
       @ApiResponse(responseCode = "400", description = "Dados inválidos")
   })
   @PutMapping("/{id}")
+  @PreAuthorize("hasRole('ADMIN') or (hasRole('RESTAURANTE') and @restauranteService.isOwner(#id))")
   public ResponseEntity<ApiResponseWrapper<RestauranteResponseDTO>> atualizarRestaurante(@PathVariable Long id,
       @Valid @RequestBody RestauranteDTO restaurante) {
     RestauranteResponseDTO atualizado = restauranteService.atualizar(id, restaurante);
     if (atualizado != null) {
-      ApiResponseWrapper<RestauranteResponseDTO> response = new ApiResponseWrapper<>(true, atualizado, "Restaurante atualizado com sucesso");
+      ApiResponseWrapper<RestauranteResponseDTO> response = new ApiResponseWrapper<>(true, atualizado,
+          "Restaurante atualizado com sucesso");
       return ResponseEntity.ok(response);
     }
     return ResponseEntity.notFound().build();
@@ -114,10 +118,12 @@ public class RestauranteController {
       @ApiResponse(responseCode = "404", description = "Restaurante não encontrado")
   })
   @PatchMapping("/{id}/status")
+  @PreAuthorize("hasRole('ADMIN') or (hasRole('RESTAURANTE') and @restauranteService.isOwner(#id))")
   public ResponseEntity<ApiResponseWrapper<RestauranteResponseDTO>> alterarStatusRestaurante(@PathVariable Long id) {
     RestauranteResponseDTO atualizado = restauranteService.alterarStatus(id);
     if (atualizado != null) {
-      ApiResponseWrapper<RestauranteResponseDTO> response = new ApiResponseWrapper<>(true, atualizado, "Status alterado com sucesso");
+      ApiResponseWrapper<RestauranteResponseDTO> response = new ApiResponseWrapper<>(true, atualizado,
+          "Status alterado com sucesso");
       return ResponseEntity.ok(response);
     }
     return ResponseEntity.notFound().build();

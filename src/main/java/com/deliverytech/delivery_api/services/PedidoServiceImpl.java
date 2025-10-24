@@ -149,6 +149,16 @@ public class PedidoServiceImpl implements PedidoService {
   }
 
   @Override
+  @Transactional(readOnly = true)
+  public Page<PedidoResponseDTO> buscarPedidosPorRestaurante(Long restauranteId, Pageable pageable) {
+    Page<Pedido> pedidosPage = pedidoRepository.findByRestauranteIdOrderByDataPedidoDesc(restauranteId, pageable);
+    return pedidosPage.stream()
+        .map(pedido -> modelMapper.map(pedido, PedidoResponseDTO.class))
+        .collect(Collectors.collectingAndThen(Collectors.toList(),
+            list -> new PageImpl<>(list, pageable, list.size())));
+  }
+
+  @Override
   public PedidoResponseDTO atualizarStatusPedido(Long id, StatusPedido novoStatus) {
     Pedido pedido = pedidoRepository.findById(id)
         .orElseThrow(() -> new EntityNotFoundException("Pedido", id));
