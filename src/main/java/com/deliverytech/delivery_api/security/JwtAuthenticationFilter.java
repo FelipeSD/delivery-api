@@ -2,7 +2,7 @@ package com.deliverytech.delivery_api.security;
 
 import java.io.IOException;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -11,7 +11,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.deliverytech.delivery_api.services.UsuarioService;
+import com.deliverytech.delivery_api.services.AuthService;
 
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
@@ -23,11 +23,13 @@ import jakarta.servlet.http.HttpServletResponse;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-  @Autowired
-  private UsuarioService usuarioService;
+  private final AuthService authService;
+  private final JwtUtil jwtUtil;
 
-  @Autowired
-  private JwtUtil jwtUtil;
+  public JwtAuthenticationFilter(@Lazy AuthService authService, JwtUtil jwtUtil) {
+    this.authService = authService;
+    this.jwtUtil = jwtUtil;
+  }
 
   @Override
   protected void doFilterInternal(
@@ -56,7 +58,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-      UserDetails userDetails = usuarioService.loadUserByUsername(username);
+      UserDetails userDetails = authService.loadUserByUsername(username);
 
       if (jwtUtil.validateToken(jwtToken, userDetails)) {
         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null,

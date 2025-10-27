@@ -13,11 +13,14 @@ import com.deliverytech.delivery_api.entities.ItemPedido;
 import com.deliverytech.delivery_api.entities.Pedido;
 import com.deliverytech.delivery_api.entities.Produto;
 import com.deliverytech.delivery_api.entities.Restaurante;
+import com.deliverytech.delivery_api.entities.Usuario;
+import com.deliverytech.delivery_api.enums.Role;
 import com.deliverytech.delivery_api.enums.StatusPedido;
 import com.deliverytech.delivery_api.repositories.ClienteRepository;
 import com.deliverytech.delivery_api.repositories.PedidoRepository;
 import com.deliverytech.delivery_api.repositories.ProdutoRepository;
 import com.deliverytech.delivery_api.repositories.RestauranteRepository;
+import com.deliverytech.delivery_api.repositories.UsuarioRepository;
 
 @Component
 public class DataLoader implements CommandLineRunner {
@@ -29,6 +32,8 @@ public class DataLoader implements CommandLineRunner {
   private ProdutoRepository produtoRepository;
   @Autowired
   private PedidoRepository pedidoRepository;
+  @Autowired
+  private UsuarioRepository usuarioRepository;
 
   @Override
   public void run(String... args) throws Exception {
@@ -38,7 +43,9 @@ public class DataLoader implements CommandLineRunner {
     produtoRepository.deleteAll();
     restauranteRepository.deleteAll();
     clienteRepository.deleteAll();
+    usuarioRepository.deleteAll();
     // Inserir dados de teste
+    inserirUsuarios();
     inserirClientes();
     inserirRestaurantes();
     inserirProdutos();
@@ -48,7 +55,36 @@ public class DataLoader implements CommandLineRunner {
     System.out.println("=== CARGA DE DADOS CONCLUÍDA ===");
   }
 
-  
+  private void inserirUsuarios() {
+    System.out.println("--- Inserindo Usuários ---");
+    Usuario admin = new Usuario();
+    admin.setNome("Admin");
+    admin.setEmail("admin@email.com");
+    admin.setSenha("$2a$10$FDTTPx1I87OPeOe2NQLoHu4B7u1LHbEB44.JXl4qY9FDNeMCLz0Ri");
+    admin.setRole(Role.ADMIN);
+    admin.setAtivo(true);
+    Usuario entregador = new Usuario();
+    entregador.setNome("Entregador");
+    entregador.setEmail("entregador@email.com");
+    entregador.setSenha("$2a$10$oYD.JpeBKci6lHoCYDU4BujuqUC73gLScKRBf07VkDVw/XQVNzItq");
+    entregador.setRole(Role.ENTREGADOR);
+    entregador.setAtivo(true);
+    Usuario cliente = new Usuario();
+    cliente.setNome("Cliente");
+    cliente.setEmail("cliente@email.com");
+    cliente.setSenha("$2a$10$IIeMYOYnd2fT3TVsEFZRtOsaCAhqtznnc75CwC8n.CFrUeZIgeHTG");
+    cliente.setRole(Role.CLIENTE);
+    cliente.setAtivo(true);
+    Usuario restaurante = new Usuario();
+    restaurante.setNome("Restaurante");
+    restaurante.setEmail("restaurante@email.com");
+    restaurante.setSenha("$2a$10$h3I7g7eU9xdmHXkYNcEmeOKUyCH2LShoR68X9a4PMRNQLgo0skrZ6");
+    restaurante.setRole(Role.RESTAURANTE);
+    restaurante.setAtivo(true);
+    usuarioRepository.saveAll(Arrays.asList(admin, entregador, cliente, restaurante));
+    var quantidadeUsuarios = usuarioRepository.count();
+    System.out.println("✓ " + quantidadeUsuarios + " usuários inseridos");
+  }
 
   private void inserirClientes() {
     System.out.println("--- Inserindo Clientes ---");

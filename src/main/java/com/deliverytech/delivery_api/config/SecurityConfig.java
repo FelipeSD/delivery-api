@@ -12,7 +12,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -22,15 +21,11 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.deliverytech.delivery_api.security.JwtAuthenticationFilter;
-import com.deliverytech.delivery_api.services.UsuarioService;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
-
-  @Autowired
-  private UsuarioService usuarioService;
 
   @Autowired
   private JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -45,7 +40,14 @@ public class SecurityConfig {
             .requestMatchers("/api/auth/**").permitAll()
             .requestMatchers("/api/restaurantes/**").permitAll()
             .requestMatchers("/api/produtos/**").permitAll()
-            .requestMatchers("/actuator/health", "/h2-console/**").permitAll()
+            .requestMatchers("/health", "/h2-console/**").permitAll()
+            .requestMatchers(
+                "/v3/api-docs/**",
+                "/api-docs/**",
+                "/swagger-ui.html",
+                "/swagger-ui/**",
+                "/scalar/**")
+            .permitAll()
             .anyRequest().authenticated())
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -57,11 +59,6 @@ public class SecurityConfig {
   @Bean
   public PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder();
-  }
-
-  @Bean
-  public UserDetailsService userDetailsService() {
-    return usuarioService;
   }
 
   @Bean

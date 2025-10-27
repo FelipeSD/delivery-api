@@ -33,6 +33,7 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(Exception.class)
   public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {
+    System.err.println("Unexpected error occurred: " + ex.getMessage());
     return buildError("INTERNAL_ERROR", "Erro interno inesperado", HttpStatus.INTERNAL_SERVER_ERROR);
   }
 
