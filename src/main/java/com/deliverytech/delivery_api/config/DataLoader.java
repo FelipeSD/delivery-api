@@ -45,11 +45,11 @@ public class DataLoader implements CommandLineRunner {
     clienteRepository.deleteAll();
     usuarioRepository.deleteAll();
     // Inserir dados de teste
-    inserirUsuarios();
     inserirClientes();
     inserirRestaurantes();
     inserirProdutos();
     inserirPedidos();
+    inserirUsuarios();
     // Executar testes das consultas
     testarConsultas();
     System.out.println("=== CARGA DE DADOS CONCLUÍDA ===");
@@ -76,9 +76,12 @@ public class DataLoader implements CommandLineRunner {
     cliente.setRole(Role.CLIENTE);
     cliente.setAtivo(true);
     Usuario restaurante = new Usuario();
+    Restaurante r = new Restaurante();
+    r.setId(1L);
     restaurante.setNome("Restaurante");
     restaurante.setEmail("restaurante@email.com");
     restaurante.setSenha("$2a$10$h3I7g7eU9xdmHXkYNcEmeOKUyCH2LShoR68X9a4PMRNQLgo0skrZ6");
+    restaurante.setRestaurante(r);
     restaurante.setRole(Role.RESTAURANTE);
     restaurante.setAtivo(true);
     usuarioRepository.saveAll(Arrays.asList(admin, entregador, cliente, restaurante));

@@ -40,6 +40,12 @@ public interface ProdutoRepository extends JpaRepository<Produto, Long> {
 
   List<Produto> findByDisponivelTrueOrderByPrecoDesc();
 
+  // Verifica se usuário é dono do produto
+  @Query("SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END " +
+      "FROM Produto p JOIN p.restaurante r JOIN r.usuarios u " +
+      "WHERE p.id = :produtoId AND u.id = :usuarioId")
+  boolean isOwner(@Param("produtoId") Long produtoId, @Param("usuarioId") Long usuarioId);
+
   // Query customizada - produtos mais vendidos
   @Query("SELECT p FROM Produto p JOIN p.itensPedido ip " +
       "GROUP BY p ORDER BY COUNT(ip) DESC")

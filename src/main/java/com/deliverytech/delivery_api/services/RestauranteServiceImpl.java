@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -22,9 +23,10 @@ import com.deliverytech.delivery_api.exceptions.EntityNotFoundException;
 import com.deliverytech.delivery_api.exceptions.ValidationException;
 import com.deliverytech.delivery_api.repositories.ProdutoRepository;
 import com.deliverytech.delivery_api.repositories.RestauranteRepository;
+import com.deliverytech.delivery_api.security.SecurityUtils;
 
-@Service
-@Transactional
+@Service("restauranteService")
+@Primary
 public class RestauranteServiceImpl implements RestauranteService {
   @Autowired
   private RestauranteRepository restauranteRepository;
@@ -146,7 +148,7 @@ public class RestauranteServiceImpl implements RestauranteService {
   public RestauranteResponseDTO alterarStatus(Long id) {
     Restaurante r = restauranteRepository.findById(id)
         .orElseThrow(() -> new EntityNotFoundException("Restaurante", id));
-    r.setAtivo(!r.isAtivo()); 
+    r.setAtivo(!r.isAtivo());
     Restaurante atualizado = restauranteRepository.save(r);
     return converterParaResponseDTO(atualizado);
   }
@@ -287,5 +289,12 @@ public class RestauranteServiceImpl implements RestauranteService {
 
   private RestauranteResponseDTO converterParaResponseDTO(Restaurante restaurante) {
     return modelMapper.map(restaurante, RestauranteResponseDTO.class);
+  }
+
+  @Override
+  public boolean isOwner(Long restauranteId) {
+    Long usuarioId = SecurityUtils.getCurrentUserId();
+    if (usuarioId == null) return false;
+    return restauranteRepository.existsByIdAndUsuarios_Id(restauranteId, usuarioId);
   }
 }

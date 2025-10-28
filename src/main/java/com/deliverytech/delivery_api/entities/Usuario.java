@@ -10,14 +10,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import com.deliverytech.delivery_api.enums.Role;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "usuario")
@@ -46,10 +39,11 @@ public class Usuario implements UserDetails {
   @Column(name = "data_criacao", nullable = false)
   private LocalDateTime dataCriacao = LocalDateTime.now();
 
-  @Column(name = "restaurante_id")
-  private Long restauranteId;
+  // ✅ RELACIONAMENTO: Muitos usuários → Um restaurante
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "restaurante_id")
+  private Restaurante restaurante;
 
-  // Construtores
   public Usuario() {
   }
 
@@ -62,7 +56,6 @@ public class Usuario implements UserDetails {
     this.dataCriacao = LocalDateTime.now();
   }
 
-  // Implementação UserDetails
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {
     return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role.name()));
@@ -98,7 +91,7 @@ public class Usuario implements UserDetails {
     return ativo;
   }
 
-  // Ge ers e Se ers
+  // Getters e Setters
   public Long getId() {
     return id;
   }
@@ -155,11 +148,11 @@ public class Usuario implements UserDetails {
     this.dataCriacao = dataCriacao;
   }
 
-  public Long getRestauranteId() {
-    return restauranteId;
+  public Restaurante getRestaurante() {
+    return restaurante;
   }
 
-  public void setRestauranteId(Long restauranteId) {
-    this.restauranteId = restauranteId;
+  public void setRestaurante(Restaurante restaurante) {
+    this.restaurante = restaurante;
   }
 }

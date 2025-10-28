@@ -32,7 +32,7 @@ public class SecurityUtils {
 
   public static Long getCurrentRestauranteId() {
     Usuario usuario = getCurrentUser();
-    return usuario.getRestauranteId();
+    return usuario.getRestaurante() != null ? usuario.getRestaurante().getId() : null;
   }
 
   public static boolean hasRole(String role) {

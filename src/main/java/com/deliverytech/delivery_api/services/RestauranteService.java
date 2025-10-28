@@ -68,4 +68,7 @@ public interface RestauranteService {
    * @return Taxa de entrega 
    */
   TaxaEntregaResponseDTO calcularTaxaEntrega(Long id, String cep);
+
+  // isOwner verifica se o usuário é o dono do restaurante
+  boolean isOwner(Long restauranteId);
 }

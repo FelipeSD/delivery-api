@@ -13,6 +13,7 @@ import org.springframework.stereotype.Repository;
 
 import com.deliverytech.delivery_api.dtos.RelatorioVendas;
 import com.deliverytech.delivery_api.entities.Restaurante;
+
 @Repository
 public interface RestauranteRepository extends JpaRepository<Restaurante, Long> {
   // Buscar por nome
@@ -38,6 +39,9 @@ public interface RestauranteRepository extends JpaRepository<Restaurante, Long> 
 
   // Top 5 restaurantes por nome (ordem alfabética)
   Page<Restaurante> findTop5ByOrderByNomeAsc(Pageable pageable);
+
+  // Verificar se o usuário é dono ou associado do restaurante
+  boolean existsByIdAndUsuarios_Id(Long restauranteId, Long usuarioId);
 
   // Query customizada - restaurantes com produtos
   @Query("SELECT DISTINCT r FROM Restaurante r JOIN r.produtos p WHERE r.ativo = true")

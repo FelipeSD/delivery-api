@@ -37,8 +37,8 @@ public class JwtUtil {
       claims.put("userId", usuario.getId());
       claims.put("role", usuario.getRole().name());
       claims.put("nome", usuario.getNome());
-      if (usuario.getRestauranteId() != null) {
-        claims.put("restauranteId", usuario.getRestauranteId());
+      if (usuario.getRestaurante() != null) {
+        claims.put("restauranteId", usuario.getRestaurante().getId());
       }
     }
 
@@ -79,10 +79,10 @@ public class JwtUtil {
     return extractClaim(token, claims -> claims.get("restauranteId", Long.class));
   }
 
-  public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) { 
-        final Claims claims = extractAllClaims(token); 
-        return claimsResolver.apply(claims); 
-    }
+  public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
+    final Claims claims = extractAllClaims(token);
+    return claimsResolver.apply(claims);
+  }
 
   private Claims extractAllClaims(String token) {
     return Jwts.parserBuilder()

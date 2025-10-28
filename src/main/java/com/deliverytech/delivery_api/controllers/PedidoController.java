@@ -66,7 +66,7 @@ public class PedidoController {
       @ApiResponse(responseCode = "404", description = "Pedido não encontrado")
   })
   @GetMapping("/{id}")
-  @PreAuthorize("hasRole('ADMIN') or hasRole('RESTAURANTE') or (hasRole('CLIENTE') and @pedidoService.isOwner(#id))")
+  @PreAuthorize("hasRole('ADMIN') or hasRole('RESTAURANTE')")
   public ResponseEntity<ApiResponseWrapper<PedidoResponseDTO>> buscarPorId(@PathVariable Long id) {
     PedidoResponseDTO pedido = pedidoService.buscarPedidoPorId(id);
     ApiResponseWrapper<PedidoResponseDTO> response = new ApiResponseWrapper<>(true, pedido,
@@ -85,6 +85,20 @@ public class PedidoController {
       @PathVariable Long clienteId,
       @PageableDefault(size = 20) Pageable pageable) {
     Page<PedidoResponseDTO> pedidos = pedidoService.buscarPedidosPorCliente(clienteId, pageable);
+    PagedResponseWrapper<PedidoResponseDTO> response = new PagedResponseWrapper<>(true, pedidos);
+    return ResponseEntity.ok(response);
+  }
+
+  // Criar endpoint meus para trazer os pedidos do usuario logado
+  @Operation(summary = "Listar meus pedidos", description = "Retorna todos os pedidos feitos pelo usuário logado")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Lista de pedidos retornada com sucesso")
+  })
+  @GetMapping("/meus")
+  @PreAuthorize("hasRole('CLIENTE')")
+  public ResponseEntity<PagedResponseWrapper<PedidoResponseDTO>> buscarMeusPedidos(
+      @PageableDefault(size = 20) Pageable pageable) {
+    Page<PedidoResponseDTO> pedidos = pedidoService.buscarMeusPedidos(pageable);
     PagedResponseWrapper<PedidoResponseDTO> response = new PagedResponseWrapper<>(true, pedidos);
     return ResponseEntity.ok(response);
   }
@@ -128,7 +142,7 @@ public class PedidoController {
       @ApiResponse(responseCode = "400", description = "Pedido não pode ser cancelado")
   })
   @DeleteMapping("/{id}")
-  @PreAuthorize("hasRole('ADMIN') or (hasRole('CLIENTE') and @pedidoService.isOwner(#id))")
+  @PreAuthorize("hasRole('ADMIN') or hasRole('CLIENTE')")
   public ResponseEntity<ApiResponseWrapper<Void>> cancelarPedido(@PathVariable Long id) {
     pedidoService.cancelarPedido(id);
     ApiResponseWrapper<Void> response = new ApiResponseWrapper<>(true, null, "Pedido cancelado com sucesso");

@@ -8,6 +8,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.deliverytech.delivery_api.dtos.RegisterRequestDTO;
+import com.deliverytech.delivery_api.entities.Restaurante;
 import com.deliverytech.delivery_api.entities.Usuario;
 import com.deliverytech.delivery_api.repositories.UsuarioRepository;
 
@@ -36,7 +37,12 @@ public class AuthService implements UserDetailsService {
     usuario.setEmail(request.getEmail());
     usuario.setSenha(passwordEncoder.encode(request.getSenha()));
     usuario.setRole(request.getRole());
-    usuario.setRestauranteId(request.getRestauranteId());
+
+    if (request.getRestauranteId() != null) {
+      Restaurante restaurante = new Restaurante();
+      restaurante.setId(request.getRestauranteId());
+      usuario.setRestaurante(restaurante);
+    }
 
     return usuarioRepository.save(usuario);
   }

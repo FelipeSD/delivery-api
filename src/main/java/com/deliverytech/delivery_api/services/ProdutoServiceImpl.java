@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -22,9 +23,11 @@ import com.deliverytech.delivery_api.exceptions.InactiveEntityException;
 import com.deliverytech.delivery_api.exceptions.ValidationException;
 import com.deliverytech.delivery_api.repositories.ProdutoRepository;
 import com.deliverytech.delivery_api.repositories.RestauranteRepository;
+import com.deliverytech.delivery_api.security.SecurityUtils;
 
-@Service
+@Service("produtoService")
 @Transactional
+@Primary
 public class ProdutoServiceImpl implements ProdutoService {
 
   @Autowired
@@ -248,5 +251,13 @@ public class ProdutoServiceImpl implements ProdutoService {
     Produto produto = produtoRepository.findById(id)
         .orElseThrow(() -> new EntityNotFoundException("Produto", id));
     produtoRepository.delete(produto);
+  }
+
+  @Override
+  public boolean isOwner(Long produtoId) {
+    Long usuarioId = SecurityUtils.getCurrentUserId();
+    if (usuarioId == null)
+      return false;
+    return produtoRepository.isOwner(produtoId, usuarioId);
   }
 }

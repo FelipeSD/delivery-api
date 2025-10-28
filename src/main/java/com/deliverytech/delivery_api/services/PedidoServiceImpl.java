@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -31,9 +32,11 @@ import com.deliverytech.delivery_api.repositories.ClienteRepository;
 import com.deliverytech.delivery_api.repositories.PedidoRepository;
 import com.deliverytech.delivery_api.repositories.ProdutoRepository;
 import com.deliverytech.delivery_api.repositories.RestauranteRepository;
+import com.deliverytech.delivery_api.security.SecurityUtils;
 
-@Service
+@Service("pedidoService")
 @Transactional
+@Primary
 public class PedidoServiceImpl implements PedidoService {
 
   @Autowired
@@ -150,6 +153,17 @@ public class PedidoServiceImpl implements PedidoService {
 
   @Override
   @Transactional(readOnly = true)
+  public Page<PedidoResponseDTO> buscarMeusPedidos(Pageable pageable) {
+    Long usuarioId = SecurityUtils.getCurrentUserId();
+    Page<Pedido> pedidosPage = pedidoRepository.findByClienteIdOrderByDataPedidoDesc(usuarioId, pageable);
+    return pedidosPage.stream()
+        .map(pedido -> modelMapper.map(pedido, PedidoResponseDTO.class))
+        .collect(Collectors.collectingAndThen(Collectors.toList(),
+            list -> new PageImpl<>(list, pageable, list.size())));
+  }
+
+  @Override
+  @Transactional(readOnly = true)
   public Page<PedidoResponseDTO> buscarPedidosPorRestaurante(Long restauranteId, Pageable pageable) {
     Page<Pedido> pedidosPage = pedidoRepository.findByRestauranteIdOrderByDataPedidoDesc(restauranteId, pageable);
     return pedidosPage.stream()
@@ -222,5 +236,14 @@ public class PedidoServiceImpl implements PedidoService {
 
   private boolean podeSerCancelado(StatusPedido status) {
     return status == StatusPedido.PENDENTE || status == StatusPedido.CONFIRMADO;
+  }
+
+  @Override
+  public boolean isOwner(Long pedidoId) {
+    Long usuarioId = SecurityUtils.getCurrentUserId();
+    Pedido pedido = pedidoRepository.findById(pedidoId)
+        .orElseThrow(() -> new EntityNotFoundException("Pedido", pedidoId));
+
+    return pedido.getCliente().getId().equals(usuarioId);
   }
 }

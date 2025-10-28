@@ -18,11 +18,15 @@ public interface PedidoService {
 
   Page<PedidoResponseDTO> buscarPedidosPorCliente(Long clienteId, Pageable pageable);
 
+  Page<PedidoResponseDTO> buscarMeusPedidos(Pageable pageable);
+
   Page<PedidoResponseDTO> buscarPedidosPorRestaurante(Long restauranteId, Pageable pageable);
 
   PedidoResponseDTO atualizarStatusPedido(Long id, StatusPedido status);
 
   BigDecimal calcularTotalPedido(List<ItemPedidoDTO> itens);
+
+  boolean isOwner(Long pedidoId);
 
   void cancelarPedido(Long id);
 }

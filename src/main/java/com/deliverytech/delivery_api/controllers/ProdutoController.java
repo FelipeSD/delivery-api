@@ -91,7 +91,7 @@ public class ProdutoController {
       @ApiResponse(responseCode = "404", description = "Produto não encontrado", content = @Content)
   })
   @PutMapping("/produtos/{id}")
-  @PreAuthorize("hasRole('ADMIN') or @produtoService.isOwner(#id)")
+  @PreAuthorize("hasRole('ADMIN') or (hasRole('RESTAURANTE') and @produtoService.isOwner(#id))")
   public ResponseEntity<ApiResponseWrapper<ProdutoResponseDTO>> atualizarProduto(@PathVariable Long id,
       @Valid @RequestBody ProdutoDTO produtoDTO) {
     ProdutoResponseDTO produto = produtoService.atualizarProduto(id, produtoDTO);
@@ -102,7 +102,7 @@ public class ProdutoController {
 
   @Operation(summary = "Alterar disponibilidade do produto", description = "Marca um produto como disponível ou indisponível")
   @PatchMapping("/produtos/{id}/disponibilidade")
-  @PreAuthorize("hasRole('ADMIN') or @produtoService.isOwner(#id)")
+  @PreAuthorize("hasRole('ADMIN') or hasRole('RESTAURANTE')")
   public ResponseEntity<ApiResponseWrapper<ProdutoResponseDTO>> alterarDisponibilidade(@PathVariable Long id,
       @RequestParam boolean disponivel) {
     ProdutoResponseDTO produto = produtoService.alterarDisponibilidade(id, disponivel);
@@ -149,7 +149,7 @@ public class ProdutoController {
       @ApiResponse(responseCode = "204", description = "Produto deletado com sucesso"),
       @ApiResponse(responseCode = "404", description = "Produto não encontrado", content = @Content)
   })
-  @PreAuthorize("hasRole('ADMIN') or @produtoService.isOwner(#id)")
+  @PreAuthorize("hasRole('ADMIN') or hasRole('RESTAURANTE')")
   @DeleteMapping("/produtos/{id}")
   public ResponseEntity<Void> deletarProduto(@PathVariable Long id) {
     produtoService.deletarProduto(id);

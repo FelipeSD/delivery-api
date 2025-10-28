@@ -51,6 +51,12 @@ public interface ProdutoService {
   Page<ProdutoResponseDTO> buscarPorRestauranteECategoria(Long restauranteId, String categoria, Pageable pageable);
 
   /**
+   * isOwner verifica se o usuário é o dono do produto
+   * @param id
+   */
+  boolean isOwner(Long produtoId);
+
+  /**
    * Deletar produto
    */
   void deletarProduto(Long id);

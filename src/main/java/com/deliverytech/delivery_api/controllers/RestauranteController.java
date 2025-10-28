@@ -22,7 +22,7 @@ import com.deliverytech.delivery_api.dtos.PagedResponseWrapper;
 import com.deliverytech.delivery_api.dtos.RestauranteDTO;
 import com.deliverytech.delivery_api.dtos.RestauranteResponseDTO;
 import com.deliverytech.delivery_api.dtos.TaxaEntregaResponseDTO;
-import com.deliverytech.delivery_api.services.RestauranteServiceImpl;
+import com.deliverytech.delivery_api.services.RestauranteService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -36,7 +36,7 @@ import jakarta.validation.Valid;
 @Tag(name = "Restaurantes", description = "API para gerenciamento de restaurantes")
 public class RestauranteController {
   @Autowired
-  private RestauranteServiceImpl restauranteService;
+  private RestauranteService restauranteService;
 
   // POST /api/restaurantes - Cadastrar restaurante
   @Operation(summary = "Cadastrar restaurante", description = "Cria um novo restaurante no sistema")
