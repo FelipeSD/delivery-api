@@ -1,6 +1,7 @@
 package com.deliverytech.delivery_api.controllers;
 
 import java.math.BigDecimal;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -25,6 +26,8 @@ import com.deliverytech.delivery_api.dtos.ApiResponseWrapper;
 import com.deliverytech.delivery_api.dtos.PagedResponseWrapper;
 import com.deliverytech.delivery_api.dtos.ProdutoDTO;
 import com.deliverytech.delivery_api.dtos.ProdutoResponseDTO;
+import com.deliverytech.delivery_api.monitoring.audit.AuditService;
+import com.deliverytech.delivery_api.security.SecurityUtils;
 import com.deliverytech.delivery_api.services.ProdutoService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -43,6 +46,9 @@ public class ProdutoController {
   @Autowired
   private ProdutoService produtoService;
 
+  @Autowired
+  private AuditService auditService;
+
   @Operation(summary = "Cadastrar novo produto", description = "Cria um novo produto vinculado a um restaurante")
   @ApiResponses(value = {
       @ApiResponse(responseCode = "201", description = "Produto criado com sucesso", content = @Content(schema = @Schema(implementation = ProdutoResponseDTO.class))),
@@ -54,6 +60,15 @@ public class ProdutoController {
   public ResponseEntity<ApiResponseWrapper<ProdutoResponseDTO>> cadastrarProduto(
       @Valid @RequestBody ProdutoDTO produtoDTO) {
     ProdutoResponseDTO produto = produtoService.cadastrarProduto(produtoDTO);
+
+    String userId = String.valueOf(SecurityUtils.getCurrentUserId());
+
+    auditService.logUserAction(
+        userId,
+        "CRIAR_PRODUTO",
+        "Produto",
+        Map.of("produtoId", produto.getId(), "nome", produto.getNome()));
+
     ApiResponseWrapper<ProdutoResponseDTO> response = new ApiResponseWrapper<>(true, produto,
         "Produto criado com sucesso");
     return ResponseEntity.status(HttpStatus.CREATED).body(response);

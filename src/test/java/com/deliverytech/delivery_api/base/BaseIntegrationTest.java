@@ -40,11 +40,11 @@ public abstract class BaseIntegrationTest {
   }
 
   protected void limparBanco() {
-    usuarioRepository.deleteAll();
-    clienteRepository.deleteAll();
     pedidoRepository.deleteAll();
     produtoRepository.deleteAll();
+    clienteRepository.deleteAll();
     restauranteRepository.deleteAll();
+    usuarioRepository.deleteAll();
   }
 
   protected String loginAndGetToken(String email, String senha) throws Exception {

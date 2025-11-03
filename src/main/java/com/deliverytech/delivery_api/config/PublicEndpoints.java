@@ -9,12 +9,14 @@ public final class PublicEndpoints {
       "/api/auth/**",
       "/api/restaurantes/**",
       "/api/produtos/**",
+      "/dashboard/**",
       "/v3/api-docs/**",
       "/api-docs/**",
       "/swagger-ui.html",
       "/swagger-ui/**",
       "/scalar/**",
       "/h2-console/**",
-      "/health"
+      "/healtsh",
+      "/info"
   };
 }

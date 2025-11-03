@@ -17,17 +17,17 @@ public class ApiResponseWrapper<T> {
   private String message;
 
   @Schema(description = "Timestamp da resposta", example = "2024-01-15T10:30:00")
-  private LocalDateTime mestamp;
+  private LocalDateTime timestamp;
 
   public ApiResponseWrapper() {
-    this.mestamp = LocalDateTime.now();
+    this.timestamp = LocalDateTime.now();
   }
 
   public ApiResponseWrapper(boolean success, T data, String message) {
     this.success = success;
     this.data = data;
     this.message = message;
-    this.mestamp = LocalDateTime.now();
+    this.timestamp = LocalDateTime.now();
   }
 
   public static <T> ApiResponseWrapper<T> success(T data, String message) {
@@ -63,10 +63,10 @@ public class ApiResponseWrapper<T> {
   }
 
   public LocalDateTime getTimestamp() {
-    return mestamp;
+    return timestamp;
   }
 
-  public void setTimestamp(LocalDateTime mestamp) {
-    this.mestamp = mestamp;
+  public void setTimestamp(LocalDateTime timestamp) {
+    this.timestamp = timestamp;
   }
 }

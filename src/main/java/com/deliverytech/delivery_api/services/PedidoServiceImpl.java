@@ -29,15 +29,19 @@ import com.deliverytech.delivery_api.exceptions.BusinessException;
 import com.deliverytech.delivery_api.exceptions.EntityNotFoundException;
 import com.deliverytech.delivery_api.exceptions.InactiveEntityException;
 import com.deliverytech.delivery_api.exceptions.OrderStatusException;
+import com.deliverytech.delivery_api.monitoring.metrics.MetricsService;
 import com.deliverytech.delivery_api.repositories.ClienteRepository;
 import com.deliverytech.delivery_api.repositories.PedidoRepository;
 import com.deliverytech.delivery_api.repositories.ProdutoRepository;
 import com.deliverytech.delivery_api.repositories.RestauranteRepository;
 import com.deliverytech.delivery_api.security.SecurityUtils;
 
+import lombok.RequiredArgsConstructor;
+
 @Service("pedidoService")
 @Transactional
 @Primary
+@RequiredArgsConstructor
 public class PedidoServiceImpl implements PedidoService {
 
   @Autowired
@@ -51,6 +55,8 @@ public class PedidoServiceImpl implements PedidoService {
 
   @Autowired
   private ProdutoRepository produtoRepository;
+
+  private final MetricsService metricsService;
 
   @Autowired
   private ModelMapper modelMapper;
@@ -128,6 +134,8 @@ public class PedidoServiceImpl implements PedidoService {
 
     // 7. Atualizar estoque (se aplicável) - Simulação
     // Em um cenário real, aqui seria decrementado o estoque
+
+    metricsService.incrementarPedidosComSucesso();
 
     // 8. Retornar pedido criado
     return modelMapper.map(pedidoSalvo, PedidoResponseDTO.class);
