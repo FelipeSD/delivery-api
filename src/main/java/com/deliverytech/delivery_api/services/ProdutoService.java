@@ -51,6 +51,11 @@ public interface ProdutoService {
   Page<ProdutoResponseDTO> buscarPorRestauranteECategoria(Long restauranteId, String categoria, Pageable pageable);
 
   /**
+   * Buscar produtos por filtros diversos
+   */
+//  Page<ProdutoResponseDTO> buscarPorFiltro();
+
+  /**
    * isOwner verifica se o usuário é o dono do produto
    * @param id
    */

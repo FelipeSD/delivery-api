@@ -16,7 +16,7 @@ public class LoginResponseDTO {
         this.usuario = usuario; 
     } 
  
-    // Ge ers e Se ers 
+    // Getters e Setters 
     public String getToken() { return token; } 
     public void setToken(String token) { this.token = token; } 
  

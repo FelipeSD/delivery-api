@@ -210,7 +210,7 @@ public class ProdutoServiceImpl implements ProdutoService {
         .findByRestauranteIdAndDisponivelTrue(restauranteId, Pageable.unpaged())
         .stream()
         .filter(p -> p.getCategoria().equalsIgnoreCase(categoria))
-        .collect(Collectors.toList());
+        .toList();
 
     return produtos.stream()
         .map(this::converterParaResponseDTO)

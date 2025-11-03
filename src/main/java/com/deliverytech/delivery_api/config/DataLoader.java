@@ -5,6 +5,7 @@ import java.util.Arrays;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.data.domain.Pageable;
 
@@ -23,6 +24,7 @@ import com.deliverytech.delivery_api.repositories.RestauranteRepository;
 import com.deliverytech.delivery_api.repositories.UsuarioRepository;
 
 @Component
+@Profile({"dev"})
 public class DataLoader implements CommandLineRunner {
   @Autowired
   private ClienteRepository clienteRepository;
@@ -36,7 +38,7 @@ public class DataLoader implements CommandLineRunner {
   private UsuarioRepository usuarioRepository;
 
   @Override
-  public void run(String... args) throws Exception {
+  public void run(String... args) {
     System.out.println("=== INICIANDO CARGA DE DADOS DE TESTE ===");
     // Limpar dados existentes
     pedidoRepository.deleteAll();
@@ -143,7 +145,7 @@ public class DataLoader implements CommandLineRunner {
       System.out.println("Erro: Não há restaurantes suficientes para inserir produtos.");
       return;
     }
-    Restaurante restaurante1 = restaurantes.get(0);
+    Restaurante restaurante1 = restaurantes.getFirst();
     Restaurante restaurante2 = restaurantes.get(1);
     var produto1 = new Produto();
     produto1.setNome("Pizza Margherita");
@@ -183,9 +185,9 @@ public class DataLoader implements CommandLineRunner {
     var pedido1 = new Pedido();
 
     var item1 = new ItemPedido();
-    item1.setProduto(produtos.get(0));
+    item1.setProduto(produtos.getFirst());
     item1.setQuantidade(1);
-    item1.setPrecoUnitario(produtos.get(0).getPreco());
+    item1.setPrecoUnitario(produtos.getFirst().getPreco());
     item1.setPedido(pedido1);
     var item2 = new ItemPedido();
     item2.setProduto(produtos.get(1));
@@ -193,12 +195,12 @@ public class DataLoader implements CommandLineRunner {
     item2.setPrecoUnitario(produtos.get(1).getPreco());
     item2.setPedido(pedido1);
 
-    pedido1.setCliente(clientes.get(0));
+    pedido1.setCliente(clientes.getFirst());
     pedido1.setRestaurante(restaurantes.get(1));
-    pedido1.setEnderecoEntrega(clientes.get(0).getEndereco());
+    pedido1.setEnderecoEntrega(clientes.getFirst().getEndereco());
     pedido1.setStatus(StatusPedido.CONFIRMADO);
     pedido1.setSubtotal(item1.getPrecoUnitario().add(item2.getPrecoUnitario()));
-    pedido1.setTaxaEntrega(restaurantes.get(0).getTaxaEntrega());
+    pedido1.setTaxaEntrega(restaurantes.getFirst().getTaxaEntrega());
     pedido1.setValorTotal(pedido1.getSubtotal().add(pedido1.getTaxaEntrega()));
     pedido1.setObservacoes("Por favor, entregar rápido.");
     pedido1.adicionarItem(item1);

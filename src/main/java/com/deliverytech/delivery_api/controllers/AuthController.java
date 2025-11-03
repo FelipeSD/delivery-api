@@ -102,10 +102,10 @@ public class AuthController {
             .body(new ApiResponseWrapper<UserResponseDTO>(false, null, "Email já está em uso"));
       }
 
-      // Criar novo usuário
+      // Criar usuário
       Usuario novoUsuario = authService.criarUsuario(registerRequest);
 
-      // Retornar dados do usuário (sem token - usuário deve fazer login)
+      // Retornar dados do usuário (sem "token" - usuário deve fazer login)
       UserResponseDTO userResponse = new UserResponseDTO(novoUsuario);
       ApiResponseWrapper<UserResponseDTO> response = new ApiResponseWrapper<>(true, userResponse,
           "Usuário criado com sucesso");

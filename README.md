@@ -68,7 +68,7 @@ Endpoints RESTful para operações de pedidos:
 - `POST /api/pedidos/calcular` — Calcular total do pedido sem salvar
 
 ### 2.5 Documentação API (Swagger)
-- `GET /scalar/index.html` — Interface Swagger da API
+- `GET /scalar` — Interface Swagger da API
 
 ---
 

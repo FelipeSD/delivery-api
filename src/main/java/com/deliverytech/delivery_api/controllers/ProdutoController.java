@@ -102,7 +102,7 @@ public class ProdutoController {
 
   @Operation(summary = "Alterar disponibilidade do produto", description = "Marca um produto como disponível ou indisponível")
   @PatchMapping("/produtos/{id}/disponibilidade")
-  @PreAuthorize("hasRole('ADMIN') or hasRole('RESTAURANTE')")
+  @PreAuthorize("hasRole('ADMIN') or (hasRole('RESTAURANTE') and @produtoService.isOwner(#id))")
   public ResponseEntity<ApiResponseWrapper<ProdutoResponseDTO>> alterarDisponibilidade(@PathVariable Long id,
       @RequestParam boolean disponivel) {
     ProdutoResponseDTO produto = produtoService.alterarDisponibilidade(id, disponivel);
@@ -149,7 +149,7 @@ public class ProdutoController {
       @ApiResponse(responseCode = "204", description = "Produto deletado com sucesso"),
       @ApiResponse(responseCode = "404", description = "Produto não encontrado", content = @Content)
   })
-  @PreAuthorize("hasRole('ADMIN') or hasRole('RESTAURANTE')")
+  @PreAuthorize("hasRole('ADMIN') or (hasRole('RESTAURANTE') and @produtoService.isOwner(#id))")
   @DeleteMapping("/produtos/{id}")
   public ResponseEntity<Void> deletarProduto(@PathVariable Long id) {
     produtoService.deletarProduto(id);
