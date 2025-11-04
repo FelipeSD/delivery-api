@@ -2,12 +2,15 @@ package com.deliverytech.delivery_api.dtos;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PositiveOrZero;
+import java.util.List;
 
 import com.deliverytech.delivery_api.enums.StatusPedido;
 
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
+import lombok.Data;
+
+@Data
 public class PedidoResponseDTO {
   private Long id;
   private String numeroPedido;
@@ -29,87 +32,9 @@ public class PedidoResponseDTO {
 
   private StatusPedido status;
 
-  private ClienteResponseDTO cliente;
+  private UsuarioResumoDTO usuario;
 
-  // Getters and setters
+  private RestauranteResumoDTO restaurante;
 
-  public Long getId() {
-    return id;
-  }
-
-  public void setId(Long id) {
-    this.id = id;
-  }
-
-  public String getNumeroPedido() {
-    return numeroPedido;
-  }
-
-  public void setNumeroPedido(String numeroPedido) {
-    this.numeroPedido = numeroPedido;
-  }
-
-  public LocalDateTime getDataPedido() {
-    return dataPedido;
-  }
-
-  public void setDataPedido(LocalDateTime dataPedido) {
-    this.dataPedido = dataPedido;
-  }
-
-  public String getEnderecoEntrega() {
-    return enderecoEntrega;
-  }
-
-  public void setEnderecoEntrega(String enderecoEntrega) {
-    this.enderecoEntrega = enderecoEntrega;
-  }
-
-  public BigDecimal getSubtotal() {
-    return subtotal;
-  }
-
-  public void setSubtotal(BigDecimal subtotal) {
-    this.subtotal = subtotal;
-  }
-
-  public BigDecimal getTaxaEntrega() {
-    return taxaEntrega;
-  }
-
-  public void setTaxaEntrega(BigDecimal taxaEntrega) {
-    this.taxaEntrega = taxaEntrega;
-  }
-
-  public BigDecimal getValorTotal() {
-    return valorTotal;
-  }
-
-  public void setValorTotal(BigDecimal valorTotal) {
-    this.valorTotal = valorTotal;
-  }
-
-  public String getObservacoes() {
-    return observacoes;
-  }
-
-  public void setObservacoes(String observacoes) {
-    this.observacoes = observacoes;
-  }
-
-  public StatusPedido getStatus() {
-    return status;
-  }
-
-  public void setStatus(StatusPedido status) {
-    this.status = status;
-  }
-
-  public ClienteResponseDTO getCliente() {
-    return cliente;
-  }
-
-  public void setCliente(ClienteResponseDTO cliente) {
-    this.cliente = cliente;
-  }
+  private List<ItemPedidoDTO> itens;
 }

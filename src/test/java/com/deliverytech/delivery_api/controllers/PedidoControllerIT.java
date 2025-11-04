@@ -23,14 +23,13 @@ import com.deliverytech.delivery_api.base.BaseIntegrationTest;
 import com.deliverytech.delivery_api.dtos.ItemPedidoDTO;
 import com.deliverytech.delivery_api.dtos.PedidoDTO;
 import com.deliverytech.delivery_api.dtos.StatusPedidoDTO;
-import com.deliverytech.delivery_api.entities.Cliente;
 import com.deliverytech.delivery_api.entities.Pedido;
 import com.deliverytech.delivery_api.entities.Produto;
 import com.deliverytech.delivery_api.entities.Restaurante;
+import com.deliverytech.delivery_api.entities.Usuario;
 import com.deliverytech.delivery_api.enums.StatusPedido;
 import com.deliverytech.delivery_api.factories.EntityFactory;
 import com.deliverytech.delivery_api.factories.UsuarioFactory;
-import com.deliverytech.delivery_api.repositories.ClienteRepository;
 import com.deliverytech.delivery_api.repositories.PedidoRepository;
 import com.deliverytech.delivery_api.repositories.ProdutoRepository;
 import com.deliverytech.delivery_api.repositories.RestauranteRepository;
@@ -41,9 +40,6 @@ class PedidoControllerIT extends BaseIntegrationTest {
 
   @Autowired
   private PedidoRepository pedidoRepository;
-
-  @Autowired
-  private ClienteRepository clienteRepository;
 
   @Autowired
   private RestauranteRepository restauranteRepository;
@@ -57,51 +53,53 @@ class PedidoControllerIT extends BaseIntegrationTest {
   @Autowired
   private UsuarioFactory usuarioFactory;
 
-  private Cliente clienteSalvo;
+  private Usuario usuarioSalvo;
   private Restaurante restauranteSalvo;
   private Produto produtoSalvo;
   private Pedido pedidoSalvo;
   private PedidoDTO pedidoDTO;
-  private String clienteJwtToken;
+  private String usuarioJwtToken;
   private String restauranteJwtToken;
   private String adminJwtToken;
 
   @BeforeEach
   void setUp() throws Exception {
-    // Criar cliente
-    clienteSalvo = clienteRepository.save(EntityFactory.criarClienteAtivo());
-
-    // Criar restaurante
-    restauranteSalvo = restauranteRepository.save(EntityFactory.criarRestaurante());
-
-    // Criar produto
-    produtoSalvo = produtoRepository.save(EntityFactory.criarProduto(restauranteSalvo));
-
-    // Criar pedido
-    pedidoSalvo = pedidoRepository.save(EntityFactory.criarPedido(clienteSalvo, restauranteSalvo));
-
-    // Criar usuários e tokens
+    // 1. PRIMEIRO: Criar e salvar TODOS os usuários
     var usuarioCliente = usuarioRepository.save(usuarioFactory.criarUsuarioCliente());
-    clienteJwtToken = loginAndGetToken(usuarioCliente.getEmail(), "123456");
-
-    var usuarioRestaurante = usuarioRepository.save(usuarioFactory.criarUsuarioRestaurante(restauranteSalvo));
-    restauranteJwtToken = loginAndGetToken(usuarioRestaurante.getEmail(), "123456");
+    usuarioSalvo = usuarioCliente;
 
     var usuarioAdmin = usuarioRepository.save(usuarioFactory.criarUsuarioAdmin());
+
+    // 2. Criar restaurante
+    restauranteSalvo = restauranteRepository.save(EntityFactory.criarRestaurante());
+
+    // 3. Criar usuário do restaurante (após restaurante existir)
+    var usuarioRestaurante = usuarioRepository.save(
+        usuarioFactory.criarUsuarioRestaurante(restauranteSalvo));
+
+    // 4. Criar produto (após restaurante existir)
+    produtoSalvo = produtoRepository.save(EntityFactory.criarProduto(restauranteSalvo));
+
+    // 5. AGORA SIM: Criar pedido (usuário e restaurante já existem)
+    pedidoSalvo = pedidoRepository.save(EntityFactory.criarPedido(usuarioSalvo, restauranteSalvo));
+
+    // 6. Gerar tokens JWT
+    usuarioJwtToken = loginAndGetToken(usuarioCliente.getEmail(), "123456");
+    restauranteJwtToken = loginAndGetToken(usuarioRestaurante.getEmail(), "123456");
     adminJwtToken = loginAndGetToken(usuarioAdmin.getEmail(), "123456");
 
-    // DTO base
-    pedidoDTO = EntityFactory.criarPedidoDTO(clienteSalvo.getId(), restauranteSalvo.getId(), produtoSalvo.getId());
+    // 7. DTO base (sem clienteId, lembre-se!)
+    pedidoDTO = EntityFactory.criarPedidoDTO(usuarioSalvo.getId(), restauranteSalvo.getId(), produtoSalvo.getId());
   }
 
   @Test
   void deveCriarPedidoComSucesso() throws Exception {
-    postJson("/api/pedidos", clienteJwtToken, pedidoDTO)
+    postJson("/api/pedidos", usuarioJwtToken, pedidoDTO)
         .andDo(print())
         .andExpect(status().isCreated())
         .andExpect(sucesso())
-        .andExpect(jsonPath("$.data.clienteId").value(clienteSalvo.getId()))
-        .andExpect(jsonPath("$.data.restauranteId").value(restauranteSalvo.getId()))
+        .andExpect(jsonPath("$.data.usuario.id").value(usuarioSalvo.getId()))
+        .andExpect(jsonPath("$.data.restaurante.id").value(restauranteSalvo.getId()))
         .andExpect(jsonPath("$.data.status").value("PENDENTE"))
         .andExpect(jsonPath("$.data.subtotal").value(91.80))
         .andExpect(jsonPath("$.data.taxaEntrega").value(8.50))
@@ -114,7 +112,7 @@ class PedidoControllerIT extends BaseIntegrationTest {
   void deveRejeitarPedidoComDadosInvalidos() throws Exception {
     PedidoDTO dtoInvalido = EntityFactory.criarPedidoDTOInvalido();
 
-    postJson("/api/pedidos", clienteJwtToken, dtoInvalido)
+    postJson("/api/pedidos", usuarioJwtToken, dtoInvalido)
         .andDo(print())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.success").value(false))
@@ -122,10 +120,10 @@ class PedidoControllerIT extends BaseIntegrationTest {
   }
 
   @Test
-  void deveRejeitarPedidoComClienteInexistente() throws Exception {
-    pedidoDTO.setClienteId(999L);
+  void deveRejeitarPedidoComUsuarioInexistente() throws Exception {
+    pedidoDTO.setUsuarioId(999L);
 
-    postJson("/api/pedidos", clienteJwtToken, pedidoDTO)
+    postJson("/api/pedidos", usuarioJwtToken, pedidoDTO)
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.success").value(false))
         .andExpect(erro("ENTITY_NOT_FOUND"));
@@ -135,7 +133,7 @@ class PedidoControllerIT extends BaseIntegrationTest {
   void deveRejeitarPedidoComRestauranteInexistente() throws Exception {
     pedidoDTO.setRestauranteId(999L);
 
-    postJson("/api/pedidos", clienteJwtToken, pedidoDTO)
+    postJson("/api/pedidos", usuarioJwtToken, pedidoDTO)
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.success").value(false))
         .andExpect(erro("ENTITY_NOT_FOUND"));
@@ -145,7 +143,7 @@ class PedidoControllerIT extends BaseIntegrationTest {
   void deveRejeitarPedidoComProdutoInexistente() throws Exception {
     pedidoDTO.getItens().get(0).setProdutoId(999L);
 
-    postJson("/api/pedidos", clienteJwtToken, pedidoDTO)
+    postJson("/api/pedidos", usuarioJwtToken, pedidoDTO)
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.success").value(false))
         .andExpect(erro("ENTITY_NOT_FOUND"));
@@ -153,7 +151,7 @@ class PedidoControllerIT extends BaseIntegrationTest {
 
   @Test
   void deveBuscarPedidoPorId() throws Exception {
-    getJson("/api/pedidos/{id}", clienteJwtToken, pedidoSalvo.getId())
+    getJson("/api/pedidos/{id}", usuarioJwtToken, pedidoSalvo.getId())
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(sucesso())
@@ -165,25 +163,25 @@ class PedidoControllerIT extends BaseIntegrationTest {
 
   @Test
   void deveRetornar404ParaPedidoInexistente() throws Exception {
-    getJson("/api/pedidos/{id}", clienteJwtToken, 999L)
+    getJson("/api/pedidos/{id}", usuarioJwtToken, 999L)
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.success").value(false))
         .andExpect(erro("ENTITY_NOT_FOUND"));
   }
 
   @Test
-  void deveListarPedidosPorCliente() throws Exception {
+  void deveListarPedidosPorUsuario() throws Exception {
     Map<String, String> params = new HashMap<>();
     params.put("page", "0");
     params.put("size", "10");
 
-    getJson("/api/pedidos/cliente/{clienteId}", clienteJwtToken, params, clienteSalvo.getId())
+    getJson("/api/pedidos/usuario/{usuarioId}", usuarioJwtToken, params, usuarioSalvo.getId())
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(sucesso())
         .andExpect(jsonPath("$.content").isArray())
         .andExpect(jsonPath("$.content", hasSize(1)))
-        .andExpect(jsonPath("$.content[0].clienteId").value(clienteSalvo.getId()))
+        .andExpect(jsonPath("$.content[0].usuarioId").value(usuarioSalvo.getId()))
         .andExpect(jsonPath("$.page.number").value(0))
         .andExpect(jsonPath("$.page.size").value(10))
         .andExpect(jsonPath("$.page.totalElements").value(1));
@@ -268,12 +266,12 @@ class PedidoControllerIT extends BaseIntegrationTest {
 
   @Test
   void deveCancelarPedidoComSucesso() throws Exception {
-    deleteJson("/api/pedidos/{id}", clienteJwtToken, pedidoSalvo.getId())
+    deleteJson("/api/pedidos/{id}", usuarioJwtToken, pedidoSalvo.getId())
         .andDo(print())
         .andExpect(status().isNoContent());
 
     // Verificar se o pedido foi realmente cancelado
-    getJson("/api/pedidos/{id}", clienteJwtToken, pedidoSalvo.getId())
+    getJson("/api/pedidos/{id}", usuarioJwtToken, pedidoSalvo.getId())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data.status").value("CANCELADO"));
   }
@@ -284,7 +282,7 @@ class PedidoControllerIT extends BaseIntegrationTest {
     pedidoSalvo.setStatus(StatusPedido.SAIU_PARA_ENTREGA);
     pedidoRepository.save(pedidoSalvo);
 
-    deleteJson("/api/pedidos/{id}", clienteJwtToken, pedidoSalvo.getId())
+    deleteJson("/api/pedidos/{id}", usuarioJwtToken, pedidoSalvo.getId())
         .andDo(print())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.success").value(false))
@@ -297,7 +295,7 @@ class PedidoControllerIT extends BaseIntegrationTest {
     pedidoSalvo.setStatus(StatusPedido.CANCELADO);
     pedidoRepository.save(pedidoSalvo);
 
-    deleteJson("/api/pedidos/{id}", clienteJwtToken, pedidoSalvo.getId())
+    deleteJson("/api/pedidos/{id}", usuarioJwtToken, pedidoSalvo.getId())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.success").value(false))
         .andExpect(erro("BUSINESS_ERROR"));
@@ -308,7 +306,7 @@ class PedidoControllerIT extends BaseIntegrationTest {
     List<ItemPedidoDTO> itens = new ArrayList<>();
     itens.add(EntityFactory.criarItemPedidoDTO(produtoSalvo.getId(), 2));
 
-    postJson("/api/pedidos/calcular", clienteJwtToken, itens)
+    postJson("/api/pedidos/calcular", usuarioJwtToken, itens)
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(sucesso())
@@ -331,7 +329,7 @@ class PedidoControllerIT extends BaseIntegrationTest {
     itens.add(EntityFactory.criarItemPedidoDTO(produtoSalvo.getId(), 2)); // 91.80
     itens.add(EntityFactory.criarItemPedidoDTO(produto2.getId(), 1)); // 39.90
 
-    postJson("/api/pedidos/calcular", clienteJwtToken, itens)
+    postJson("/api/pedidos/calcular", usuarioJwtToken, itens)
         .andExpect(status().isOk())
         .andExpect(sucesso())
         .andExpect(jsonPath("$.data").value(131.70)); // 91.80 + 39.90
@@ -342,19 +340,19 @@ class PedidoControllerIT extends BaseIntegrationTest {
     List<ItemPedidoDTO> itens = new ArrayList<>();
     itens.add(EntityFactory.criarItemPedidoDTO(999L, 2));
 
-    postJson("/api/pedidos/calcular", clienteJwtToken, itens)
+    postJson("/api/pedidos/calcular", usuarioJwtToken, itens)
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.success").value(false))
         .andExpect(erro("ENTITY_NOT_FOUND"));
   }
 
   @Test
-  void deveRejeitarPedidoComClienteInativo() throws Exception {
-    // Desativar cliente
-    clienteSalvo.setAtivo(false);
-    clienteRepository.save(clienteSalvo);
+  void deveRejeitarPedidoComUsuarioInativo() throws Exception {
+    // Desativar usuario
+    usuarioSalvo.setAtivo(false);
+    usuarioRepository.save(usuarioSalvo);
 
-    postJson("/api/pedidos", clienteJwtToken, pedidoDTO)
+    postJson("/api/pedidos", usuarioJwtToken, pedidoDTO)
         .andDo(print())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.success").value(false))
@@ -367,7 +365,7 @@ class PedidoControllerIT extends BaseIntegrationTest {
     restauranteSalvo.setAtivo(false);
     restauranteRepository.save(restauranteSalvo);
 
-    postJson("/api/pedidos", clienteJwtToken, pedidoDTO)
+    postJson("/api/pedidos", usuarioJwtToken, pedidoDTO)
         .andDo(print())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.success").value(false))
@@ -380,20 +378,20 @@ class PedidoControllerIT extends BaseIntegrationTest {
     produtoSalvo.setDisponivel(false);
     produtoRepository.save(produtoSalvo);
 
-    postJson("/api/pedidos", clienteJwtToken, pedidoDTO)
+    postJson("/api/pedidos", usuarioJwtToken, pedidoDTO)
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.success").value(false))
         .andExpect(erro("BUSINESS_ERROR"));
   }
 
   @Test
-  void deveRetornarHistoricoDePedidosDoCliente() throws Exception {
+  void deveRetornarHistoricoDePedidosDoUsuario() throws Exception {
     // Criar mais pedidos com diferentes status
-    Pedido pedido2 = EntityFactory.criarPedido(clienteSalvo, restauranteSalvo);
+    Pedido pedido2 = EntityFactory.criarPedido(usuarioSalvo, restauranteSalvo);
     pedido2.setStatus(StatusPedido.ENTREGUE);
     pedidoRepository.save(pedido2);
 
-    Pedido pedido3 = EntityFactory.criarPedido(clienteSalvo, restauranteSalvo);
+    Pedido pedido3 = EntityFactory.criarPedido(usuarioSalvo, restauranteSalvo);
     pedido3.setStatus(StatusPedido.CANCELADO);
     pedidoRepository.save(pedido3);
 
@@ -401,7 +399,7 @@ class PedidoControllerIT extends BaseIntegrationTest {
     params.put("page", "0");
     params.put("size", "10");
 
-    getJson("/api/pedidos/cliente/{clienteId}", clienteJwtToken, params, clienteSalvo.getId())
+    getJson("/api/pedidos/usuario/{usuarioId}", usuarioJwtToken, params, usuarioSalvo.getId())
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(sucesso())

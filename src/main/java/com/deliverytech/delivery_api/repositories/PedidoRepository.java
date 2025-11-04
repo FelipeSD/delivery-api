@@ -11,21 +11,19 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.deliverytech.delivery_api.entities.Cliente;
 import com.deliverytech.delivery_api.entities.Pedido;
+import com.deliverytech.delivery_api.entities.Usuario;
 import com.deliverytech.delivery_api.enums.StatusPedido;
 
 @Repository
 public interface PedidoRepository extends JpaRepository<Pedido, Long> {
-  // Buscar pedidos por cliente
-  Page<Pedido> findByClienteOrderByDataPedidoDesc(Cliente cliente, Pageable pageable);
+  // Buscar pedidos por usuario
+  Page<Pedido> findByUsuarioOrderByDataPedidoDesc(Usuario usuario, Pageable pageable);
 
-  // Buscar pedidos por cliente ID
-  Page<Pedido> findByClienteIdOrderByDataPedidoDesc(Long clienteId, Pageable pageable);
+  // Buscar pedidos por usuario ID
+  Page<Pedido> findByUsuarioIdOrderByDataPedidoDesc(Long usuarioId, Pageable pageable);
 
   // Buscar pedidos por restaurante ID
-  // @Query("SELECT p FROM Pedido p WHERE p.restaurante.id = :restauranteId ORDER BY p.dataPedido DESC")
-  // Page<Pedido> findByRestauranteId(@Param("restauranteId") Long restauranteId, Pageable pageable);
   Page<Pedido> findByRestauranteIdOrderByDataPedidoDesc(Long restauranteId, Pageable pageable);
 
   // Buscar por status

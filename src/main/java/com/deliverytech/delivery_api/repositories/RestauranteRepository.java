@@ -16,6 +16,10 @@ import com.deliverytech.delivery_api.entities.Restaurante;
 
 @Repository
 public interface RestauranteRepository extends JpaRepository<Restaurante, Long> {
+  boolean existsByEmail(String email);
+
+  boolean existsByCnpj(String cnpj);
+
   // Buscar por nome
   Optional<Restaurante> findByNome(String nome);
 
@@ -25,7 +29,7 @@ public interface RestauranteRepository extends JpaRepository<Restaurante, Long> 
   // Buscar por categoria
   Page<Restaurante> findByCategoriaAndAtivoTrue(String categoria, Pageable pageable);
 
-  // Buscar por nome contendo (case insensi ve)
+  // Buscar por nome contendo (case insensitive)
   Page<Restaurante> findByNomeContainingIgnoreCaseAndAtivoTrue(String nome, Pageable pageable);
 
   // Buscar por avaliação mínima

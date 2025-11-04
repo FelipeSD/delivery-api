@@ -48,7 +48,7 @@ public class PedidoController {
   @ApiResponses(value = {
       @ApiResponse(responseCode = "201", description = "Pedido criado com sucesso"),
       @ApiResponse(responseCode = "400", description = "Dados inválidos fornecidos"),
-      @ApiResponse(responseCode = "404", description = "Cliente ou restaurante não encontrado")
+      @ApiResponse(responseCode = "404", description = "Usuario ou restaurante não encontrado")
   })
   @PostMapping
   @PreAuthorize("hasRole('CLIENTE')")
@@ -66,7 +66,7 @@ public class PedidoController {
       @ApiResponse(responseCode = "404", description = "Pedido não encontrado")
   })
   @GetMapping("/{id}")
-  @PreAuthorize("hasRole('ADMIN') or hasRole('RESTAURANTE')")
+  @PreAuthorize("hasRole('ADMIN') or hasRole('RESTAURANTE') or @pedidoService.isOwner(#id)")
   public ResponseEntity<ApiResponseWrapper<PedidoResponseDTO>> buscarPorId(@PathVariable Long id) {
     PedidoResponseDTO pedido = pedidoService.buscarPedidoPorId(id);
     ApiResponseWrapper<PedidoResponseDTO> response = new ApiResponseWrapper<>(true, pedido,
@@ -74,17 +74,17 @@ public class PedidoController {
     return ResponseEntity.ok(response);
   }
 
-  @Operation(summary = "Listar pedidos por cliente", description = "Retorna todos os pedidos feitos por um cliente específico")
+  @Operation(summary = "Listar pedidos por usuário", description = "Retorna todos os pedidos feitos por um usuário específico")
   @ApiResponses(value = {
       @ApiResponse(responseCode = "200", description = "Lista de pedidos retornada com sucesso"),
-      @ApiResponse(responseCode = "404", description = "Cliente não encontrado")
+      @ApiResponse(responseCode = "404", description = "Usuario não encontrado")
   })
-  @GetMapping("/cliente/{clienteId}")
-  @PreAuthorize("hasRole('ADMIN') or (hasRole('CLIENTE') and #clienteId == principal.id)")
-  public ResponseEntity<PagedResponseWrapper<PedidoResponseDTO>> buscarPorCliente(
-      @PathVariable Long clienteId,
+  @GetMapping("/usuario/{usuarioId}")
+  @PreAuthorize("hasRole('ADMIN') or @pedidoService.isOwner(#id)")
+  public ResponseEntity<PagedResponseWrapper<PedidoResponseDTO>> buscarPorUsuario(
+      @PathVariable Long usuarioId,
       @PageableDefault(size = 20) Pageable pageable) {
-    Page<PedidoResponseDTO> pedidos = pedidoService.buscarPedidosPorCliente(clienteId, pageable);
+    Page<PedidoResponseDTO> pedidos = pedidoService.buscarPedidosPorUsuario(usuarioId, pageable);
     PagedResponseWrapper<PedidoResponseDTO> response = new PagedResponseWrapper<>(true, pedidos);
     return ResponseEntity.ok(response);
   }
@@ -142,7 +142,7 @@ public class PedidoController {
       @ApiResponse(responseCode = "400", description = "Pedido não pode ser cancelado")
   })
   @DeleteMapping("/{id}")
-  @PreAuthorize("hasRole('ADMIN') or hasRole('CLIENTE')")
+  @PreAuthorize("hasRole('ADMIN') or @pedidoService.isOwner(#id)")
   public ResponseEntity<ApiResponseWrapper<Void>> cancelarPedido(@PathVariable Long id) {
     pedidoService.cancelarPedido(id);
     ApiResponseWrapper<Void> response = new ApiResponseWrapper<>(true, null, "Pedido cancelado com sucesso");

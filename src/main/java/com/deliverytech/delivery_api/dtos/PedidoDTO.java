@@ -11,16 +11,17 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
-
+import lombok.Data;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+@Data
 @Schema(description = "Dados para criação de pedido")
 public class PedidoDTO {
 
-  @Schema(description = "ID do cliente que fez o pedido", example = "1", required = true)
-  @NotNull(message = "Cliente é obrigatório")
-  @Positive(message = "Cliente ID deve ser positivo")
-  private Long clienteId;
+  @Schema(description = "ID do usuário que fez o pedido", example = "1", required = true)
+  @NotNull(message = "Usuário é obrigatório")
+  @Positive(message = "Usuário ID deve ser positivo")
+  private Long usuarioId;
 
   @Schema(description = "ID do restaurante onde o pedido foi feito", example = "1", required = true)
   @NotNull(message = "Restaurante é obrigatório")
@@ -49,61 +50,4 @@ public class PedidoDTO {
   @NotEmpty(message = "Pedido deve ter pelo menos um item")
   @Valid
   private List<ItemPedidoDTO> itens;
-
-  // Getters e Setters
-  public Long getClienteId() {
-    return clienteId;
-  }
-
-  public void setClienteId(Long clienteId) {
-    this.clienteId = clienteId;
-  }
-
-  public Long getRestauranteId() {
-    return restauranteId;
-  }
-
-  public void setRestauranteId(Long restauranteId) {
-    this.restauranteId = restauranteId;
-  }
-
-  public String getEnderecoEntrega() {
-    return enderecoEntrega;
-  }
-
-  public void setEnderecoEntrega(String enderecoEntrega) {
-    this.enderecoEntrega = enderecoEntrega;
-  }
-
-  public List<ItemPedidoDTO> getItens() {
-    return itens;
-  }
-
-  public void setItens(List<ItemPedidoDTO> itens) {
-    this.itens = itens;
-  }
-
-  public String getObservacoes() {
-    return observacoes;
-  }
-
-  public void setObservacoes(String observacoes) {
-    this.observacoes = observacoes;
-  }
-
-  public String getCep() {
-    return cep;
-  }
-
-  public void setCep(String cep) {
-    this.cep = cep;
-  }
-
-  public String getFormaPagamento() {
-    return formaPagamento;
-  }
-
-  public void setFormaPagamento(String formaPagamento) {
-    this.formaPagamento = formaPagamento;
-  }
 }

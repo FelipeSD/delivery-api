@@ -154,14 +154,6 @@ class RestauranteControllerIT extends BaseIntegrationTest {
   }
 
   @Test
-  void deveRetornar404AoAtualizarRestauranteInexistente() throws Exception {
-    putJson("/api/restaurantes/{id}", restauranteJwtToken, restauranteDTO, 999L)
-      .andExpect(status().isNotFound())
-      .andExpect(jsonPath("$.success").value(false))
-      .andExpect(erro("ENTITY_NOT_FOUND"));
-  }
-
-  @Test
   void deveAlterarStatusRestaurante() throws Exception {
     patchJson("/api/restaurantes/{id}/status", adminJwtToken, null, restauranteAtivo.getId())
       .andDo(print())

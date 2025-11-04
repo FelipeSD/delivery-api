@@ -19,6 +19,7 @@ import com.deliverytech.delivery_api.dtos.RestauranteResponseDTO;
 import com.deliverytech.delivery_api.dtos.TaxaEntregaResponseDTO;
 import com.deliverytech.delivery_api.entities.Produto;
 import com.deliverytech.delivery_api.entities.Restaurante;
+import com.deliverytech.delivery_api.exceptions.ConflictException;
 import com.deliverytech.delivery_api.exceptions.EntityNotFoundException;
 import com.deliverytech.delivery_api.exceptions.ValidationException;
 import com.deliverytech.delivery_api.repositories.ProdutoRepository;
@@ -40,10 +41,16 @@ public class RestauranteServiceImpl implements RestauranteService {
   @Override
   @Transactional
   public RestauranteResponseDTO cadastrar(RestauranteDTO restauranteDTO) {
-    // 1. Validar dados básicos
     validarDadosRestaurante(restauranteDTO);
 
-    // 4. Criar e salvar restaurante
+    if (restauranteRepository.existsByEmail(restauranteDTO.getEmail())) {
+      throw new ConflictException("Restaurante", "email");
+    }
+
+    if (restauranteRepository.existsByCnpj(restauranteDTO.getCnpj())) {
+      throw new ConflictException("Restaurante", "CNPJ");
+    }
+
     Restaurante restaurante = new Restaurante();
     restaurante.setNome(restauranteDTO.getNome());
     restaurante.setTelefone(restauranteDTO.getTelefone());
@@ -294,7 +301,8 @@ public class RestauranteServiceImpl implements RestauranteService {
   @Override
   public boolean isOwner(Long restauranteId) {
     Long usuarioId = SecurityUtils.getCurrentUserId();
-    if (usuarioId == null) return false;
+    if (usuarioId == null)
+      return false;
     return restauranteRepository.existsByIdAndUsuarios_Id(restauranteId, usuarioId);
   }
 }

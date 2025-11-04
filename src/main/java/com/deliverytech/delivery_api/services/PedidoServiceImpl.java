@@ -2,15 +2,13 @@ package com.deliverytech.delivery_api.services;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -19,235 +17,485 @@ import org.springframework.transaction.annotation.Transactional;
 import com.deliverytech.delivery_api.dtos.ItemPedidoDTO;
 import com.deliverytech.delivery_api.dtos.PedidoDTO;
 import com.deliverytech.delivery_api.dtos.PedidoResponseDTO;
-import com.deliverytech.delivery_api.entities.Cliente;
 import com.deliverytech.delivery_api.entities.ItemPedido;
 import com.deliverytech.delivery_api.entities.Pedido;
 import com.deliverytech.delivery_api.entities.Produto;
 import com.deliverytech.delivery_api.entities.Restaurante;
+import com.deliverytech.delivery_api.entities.Usuario;
 import com.deliverytech.delivery_api.enums.StatusPedido;
 import com.deliverytech.delivery_api.exceptions.BusinessException;
 import com.deliverytech.delivery_api.exceptions.EntityNotFoundException;
 import com.deliverytech.delivery_api.exceptions.InactiveEntityException;
 import com.deliverytech.delivery_api.exceptions.OrderStatusException;
 import com.deliverytech.delivery_api.monitoring.metrics.MetricsService;
-import com.deliverytech.delivery_api.repositories.ClienteRepository;
 import com.deliverytech.delivery_api.repositories.PedidoRepository;
 import com.deliverytech.delivery_api.repositories.ProdutoRepository;
 import com.deliverytech.delivery_api.repositories.RestauranteRepository;
+import com.deliverytech.delivery_api.repositories.UsuarioRepository;
 import com.deliverytech.delivery_api.security.SecurityUtils;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Implementação do serviço de gerenciamento de pedidos.
+ * 
+ * Esta classe é responsável por toda a lógica de negócio relacionada a pedidos,
+ * incluindo criação, consulta, atualização de status e cancelamento.
+ * 
+ * @author DeliveryTech Team
+ * @version 2.0
+ */
+@Slf4j
 @Service("pedidoService")
-@Transactional
 @Primary
 @RequiredArgsConstructor
+@Transactional
 public class PedidoServiceImpl implements PedidoService {
 
-  @Autowired
-  private PedidoRepository pedidoRepository;
-
-  @Autowired
-  private ClienteRepository clienteRepository;
-
-  @Autowired
-  private RestauranteRepository restauranteRepository;
-
-  @Autowired
-  private ProdutoRepository produtoRepository;
-
+  private final PedidoRepository pedidoRepository;
+  private final UsuarioRepository usuarioRepository;
+  private final RestauranteRepository restauranteRepository;
+  private final ProdutoRepository produtoRepository;
   private final MetricsService metricsService;
+  private final ModelMapper modelMapper;
 
-  @Autowired
-  private ModelMapper modelMapper;
+  // ==================== MÉTODOS PÚBLICOS ====================
 
+  /**
+   * Cria um novo pedido no sistema.
+   * 
+   * Este método realiza todas as validações necessárias, calcula valores e
+   * persiste o pedido com seus itens.
+   * 
+   * @param dto Dados do pedido a ser criado
+   * @return PedidoResponseDTO com os dados do pedido criado
+   * @throws EntityNotFoundException se usuário, restaurante ou produto não
+   *                                 existir
+   * @throws InactiveEntityException se usuário ou restaurante estiver inativo
+   * @throws BusinessException       se houver regra de negócio violada
+   */
   @Override
   @Transactional(isolation = Isolation.REPEATABLE_READ)
   public PedidoResponseDTO criarPedido(PedidoDTO dto) {
-    // 1. Validar cliente existe e está ativo
-    Cliente cliente = clienteRepository.findById(dto.getClienteId())
-        .orElseThrow(() -> new EntityNotFoundException("Cliente", dto.getClienteId()));
+    log.info("Iniciando criação de pedido para usuário ID: {} e restaurante ID: {}",
+        dto.getUsuarioId(), dto.getRestauranteId());
 
-    if (!cliente.isAtivo()) {
-      throw new InactiveEntityException("Cliente", dto.getClienteId());
+    try {
+      // 1. Validar e buscar entidades
+      Usuario usuario = validarEBuscarUsuario(dto.getUsuarioId());
+      Restaurante restaurante = validarEBuscarRestaurante(dto.getRestauranteId());
+
+      // 2. Processar itens do pedido
+      List<ItemPedido> itensPedido = processarItensPedido(dto.getItens(), restaurante.getId());
+
+      // 3. Calcular valores do pedido
+      BigDecimal subtotal = calcularSubtotal(itensPedido);
+      BigDecimal taxaEntrega = restaurante.getTaxaEntrega();
+      BigDecimal valorTotal = subtotal.add(taxaEntrega);
+
+      // 4. Criar e configurar pedido
+      Pedido pedido = construirPedido(dto, usuario, restaurante, subtotal, taxaEntrega, valorTotal);
+
+      // 5. Salvar pedido
+      Pedido pedidoSalvo = pedidoRepository.save(pedido);
+
+      // 6. Associar itens ao pedido
+      associarItensPedido(pedidoSalvo, itensPedido);
+
+      // 7. Atualizar métricas
+      metricsService.incrementarPedidosComSucesso();
+
+      log.info("Pedido criado com sucesso. ID: {} | Número: {} | Valor: R$ {}",
+          pedidoSalvo.getId(), pedidoSalvo.getNumeroPedido(), valorTotal);
+
+      return converterParaDTO(pedidoSalvo);
+
+    } catch (Exception e) {
+      log.error("Erro ao criar pedido: {}", e.getMessage(), e);
+      throw e;
     }
-
-    // 2. Validar restaurante existe e está ativo
-    Restaurante restaurante = restauranteRepository.findById(dto.getRestauranteId())
-        .orElseThrow(() -> new EntityNotFoundException("Restaurante", dto.getRestauranteId()));
-
-    if (!restaurante.isAtivo()) {
-      throw new InactiveEntityException("Restaurante", dto.getRestauranteId());
-    }
-
-    // 3. Validar todos os produtos existem e estão disponíveis
-    List<ItemPedido> itensPedido = new ArrayList<>();
-    BigDecimal subtotal = BigDecimal.ZERO;
-
-    for (ItemPedidoDTO itemDTO : dto.getItens()) {
-      Produto produto = produtoRepository.findById(itemDTO.getProdutoId())
-          .orElseThrow(() -> new EntityNotFoundException("Produto", itemDTO.getProdutoId()));
-
-      if (!produto.isDisponivel()) {
-        throw new BusinessException("Produto indisponível:", produto.getNome());
-      }
-
-      if (!produto.getRestaurante().getId().equals(dto.getRestauranteId())) {
-        throw new BusinessException("Produto não pertence ao restaurante selecionado",
-            produto.getRestaurante().getNome());
-      }
-
-      // Criar ítem do pedido
-      ItemPedido item = new ItemPedido();
-      item.setProduto(produto);
-      item.setQuantidade(itemDTO.getQuantidade());
-      item.setPrecoUnitario(produto.getPreco());
-
-      item.setSubtotal(produto.getPreco().multiply(BigDecimal.valueOf(itemDTO.getQuantidade())));
-
-      itensPedido.add(item);
-      subtotal = subtotal.add(item.getSubtotal());
-    }
-
-    // 4. Calcular total do pedido
-    BigDecimal taxaEntrega = restaurante.getTaxaEntrega();
-    BigDecimal valorTotal = subtotal.add(taxaEntrega);
-
-    // 5. Salvar pedido
-    Pedido pedido = new Pedido();
-    pedido.setCliente(cliente);
-    pedido.setRestaurante(restaurante);
-    pedido.setDataPedido(LocalDateTime.now());
-    pedido.setStatus(StatusPedido.PENDENTE);
-    pedido.setEnderecoEntrega(dto.getEnderecoEntrega());
-    pedido.setSubtotal(subtotal);
-    pedido.setTaxaEntrega(taxaEntrega);
-    pedido.setValorTotal(valorTotal);
-
-    Pedido pedidoSalvo = pedidoRepository.save(pedido);
-
-    // 6. Salvar itens do pedido
-    for (ItemPedido item : itensPedido) {
-      item.setPedido(pedidoSalvo);
-    }
-    pedidoSalvo.setItens(itensPedido);
-
-    // 7. Atualizar estoque (se aplicável) - Simulação
-    // Em um cenário real, aqui seria decrementado o estoque
-
-    metricsService.incrementarPedidosComSucesso();
-
-    // 8. Retornar pedido criado
-    return modelMapper.map(pedidoSalvo, PedidoResponseDTO.class);
   }
 
+  /**
+   * Busca um pedido específico por ID.
+   * 
+   * @param id ID do pedido
+   * @return PedidoResponseDTO com os dados do pedido
+   * @throws EntityNotFoundException se o pedido não for encontrado
+   */
   @Override
   @Transactional(readOnly = true)
   public PedidoResponseDTO buscarPedidoPorId(Long id) {
-    Pedido pedido = pedidoRepository.findById(id)
-        .orElseThrow(() -> new EntityNotFoundException("Pedido", id));
+    log.debug("Buscando pedido por ID: {}", id);
 
-    return modelMapper.map(pedido, PedidoResponseDTO.class);
+    Pedido pedido = buscarPedidoOuLancarExcecao(id);
+    return converterParaDTO(pedido);
   }
 
+  /**
+   * Busca pedidos de um usuário específico com paginação.
+   * 
+   * @param usuarioId ID do usuário
+   * @param pageable  Configuração de paginação
+   * @return Page de PedidoResponseDTO
+   */
   @Override
   @Transactional(readOnly = true)
-  public Page<PedidoResponseDTO> buscarPedidosPorCliente(Long clienteId, Pageable pageable) {
-    Page<Pedido> pedidosPage = pedidoRepository.findByClienteIdOrderByDataPedidoDesc(clienteId, pageable);
-    return pedidosPage.stream()
-        .map(pedido -> modelMapper.map(pedido, PedidoResponseDTO.class))
-        .collect(Collectors.collectingAndThen(Collectors.toList(),
-            list -> new PageImpl<>(list, pageable, list.size())));
+  public Page<PedidoResponseDTO> buscarPedidosPorUsuario(Long usuarioId, Pageable pageable) {
+    log.debug("Buscando pedidos do usuário ID: {}", usuarioId);
+
+    validarUsuarioExiste(usuarioId);
+
+    Page<Pedido> pedidosPage = pedidoRepository.findByUsuarioIdOrderByDataPedidoDesc(usuarioId, pageable);
+    return pedidosPage.map(this::converterParaDTO);
   }
 
+  /**
+   * Busca pedidos do usuário autenticado.
+   * 
+   * @param pageable Configuração de paginação
+   * @return Page de PedidoResponseDTO
+   */
   @Override
   @Transactional(readOnly = true)
   public Page<PedidoResponseDTO> buscarMeusPedidos(Pageable pageable) {
     Long usuarioId = SecurityUtils.getCurrentUserId();
-    Page<Pedido> pedidosPage = pedidoRepository.findByClienteIdOrderByDataPedidoDesc(usuarioId, pageable);
-    return pedidosPage.stream()
-        .map(pedido -> modelMapper.map(pedido, PedidoResponseDTO.class))
-        .collect(Collectors.collectingAndThen(Collectors.toList(),
-            list -> new PageImpl<>(list, pageable, list.size())));
+    log.debug("Buscando pedidos do usuário autenticado ID: {}", usuarioId);
+
+    Page<Pedido> pedidosPage = pedidoRepository.findByUsuarioIdOrderByDataPedidoDesc(usuarioId, pageable);
+    return pedidosPage.map(this::converterParaDTO);
   }
 
+  /**
+   * Busca pedidos de um restaurante específico com paginação.
+   * 
+   * @param restauranteId ID do restaurante
+   * @param pageable      Configuração de paginação
+   * @return Page de PedidoResponseDTO
+   */
   @Override
   @Transactional(readOnly = true)
   public Page<PedidoResponseDTO> buscarPedidosPorRestaurante(Long restauranteId, Pageable pageable) {
+    log.debug("Buscando pedidos do restaurante ID: {}", restauranteId);
+
+    validarRestauranteExiste(restauranteId);
+
     Page<Pedido> pedidosPage = pedidoRepository.findByRestauranteIdOrderByDataPedidoDesc(restauranteId, pageable);
-    return pedidosPage.stream()
-        .map(pedido -> modelMapper.map(pedido, PedidoResponseDTO.class))
-        .collect(Collectors.collectingAndThen(Collectors.toList(),
-            list -> new PageImpl<>(list, pageable, list.size())));
+    return pedidosPage.map(this::converterParaDTO);
   }
 
+  /**
+   * Atualiza o status de um pedido.
+   * 
+   * @param id         ID do pedido
+   * @param novoStatus Novo status a ser aplicado
+   * @return PedidoResponseDTO com os dados atualizados
+   * @throws EntityNotFoundException se o pedido não for encontrado
+   * @throws OrderStatusException    se a transição de status não for permitida
+   */
   @Override
   public PedidoResponseDTO atualizarStatusPedido(Long id, StatusPedido novoStatus) {
-    Pedido pedido = pedidoRepository.findById(id)
-        .orElseThrow(() -> new EntityNotFoundException("Pedido", id));
+    log.info("Atualizando status do pedido ID: {} para: {}", id, novoStatus);
 
-    // Validar transições de status permitidas
-    if (!isTransicaoValida(pedido.getStatus(), novoStatus)) {
-      throw new OrderStatusException(id, pedido.getStatus().name(), novoStatus.name());
-    }
+    Pedido pedido = buscarPedidoOuLancarExcecao(id);
+    StatusPedido statusAnterior = pedido.getStatus();
 
+    // Validar transição de status
+    validarTransicaoStatus(pedido, novoStatus);
+
+    // Atualizar status
     pedido.setStatus(novoStatus);
     Pedido pedidoAtualizado = pedidoRepository.save(pedido);
 
-    return modelMapper.map(pedidoAtualizado, PedidoResponseDTO.class);
+    log.info("Status do pedido ID: {} atualizado de {} para {}",
+        id, statusAnterior, novoStatus);
+
+    return converterParaDTO(pedidoAtualizado);
   }
 
+  /**
+   * Calcula o valor total de um pedido baseado nos itens fornecidos.
+   * 
+   * @param itens Lista de itens do pedido
+   * @return BigDecimal com o valor total calculado
+   * @throws EntityNotFoundException se algum produto não for encontrado
+   */
   @Override
   @Transactional(readOnly = true)
   public BigDecimal calcularTotalPedido(List<ItemPedidoDTO> itens) {
-    BigDecimal total = BigDecimal.ZERO;
+    log.debug("Calculando total do pedido com {} itens", itens.size());
 
-    for (ItemPedidoDTO item : itens) {
-      Produto produto = produtoRepository.findById(item.getProdutoId())
-          .orElseThrow(() -> new EntityNotFoundException("Produto", item.getProdutoId()));
+    BigDecimal total = itens.stream()
+        .map(this::calcularSubtotalItem)
+        .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-      BigDecimal subtotalItem = produto.getPreco()
-          .multiply(BigDecimal.valueOf(item.getQuantidade()));
-      total = total.add(subtotalItem);
-    }
-
+    log.debug("Total calculado: R$ {}", total);
     return total;
   }
 
+  /**
+   * Cancela um pedido existente.
+   * 
+   * @param id ID do pedido a ser cancelado
+   * @throws EntityNotFoundException se o pedido não for encontrado
+   * @throws OrderStatusException    se o pedido não puder ser cancelado
+   */
   @Override
   public void cancelarPedido(Long id) {
-    Pedido pedido = pedidoRepository.findById(id)
-        .orElseThrow(() -> new EntityNotFoundException("Pedido", id));
+    log.info("Iniciando cancelamento do pedido ID: {}", id);
 
+    Pedido pedido = buscarPedidoOuLancarExcecao(id);
+
+    // Validar se pode ser cancelado
     if (!podeSerCancelado(pedido.getStatus())) {
-      throw new OrderStatusException(id, pedido.getStatus().name(), "CANCELADO");
+      throw new OrderStatusException(
+          id,
+          pedido.getStatus().name(),
+          "CANCELADO");
     }
 
+    // Cancelar pedido
     pedido.setStatus(StatusPedido.CANCELADO);
     pedidoRepository.save(pedido);
+
+    log.info("Pedido ID: {} cancelado com sucesso", id);
   }
 
+  /**
+   * Verifica se o usuário autenticado é o dono do pedido.
+   * 
+   * @param pedidoId ID do pedido
+   * @return true se for o dono, false caso contrário
+   */
+  @Override
+  @Transactional(readOnly = true)
+  public boolean isOwner(Long pedidoId) {
+    Long usuarioId = SecurityUtils.getCurrentUserId();
+    Pedido pedido = buscarPedidoOuLancarExcecao(pedidoId);
+
+    return pedido.getUsuario().getId().equals(usuarioId);
+  }
+
+  // ==================== MÉTODOS PRIVADOS - VALIDAÇÃO ====================
+
+  /**
+   * Valida e busca um usuário pelo ID.
+   */
+  private Usuario validarEBuscarUsuario(Long usuarioId) {
+    Usuario usuario = usuarioRepository.findById(usuarioId)
+        .orElseThrow(() -> new EntityNotFoundException("Usuario", usuarioId));
+
+    if (!usuario.getAtivo()) {
+      throw new InactiveEntityException("Usuario", usuarioId);
+    }
+
+    return usuario;
+  }
+
+  /**
+   * Valida e busca um restaurante pelo ID.
+   */
+  private Restaurante validarEBuscarRestaurante(Long restauranteId) {
+    Restaurante restaurante = restauranteRepository.findById(restauranteId)
+        .orElseThrow(() -> new EntityNotFoundException("Restaurante", restauranteId));
+
+    if (!restaurante.isAtivo()) {
+      throw new InactiveEntityException("Restaurante", restauranteId);
+    }
+
+    return restaurante;
+  }
+
+  /**
+   * Valida se um usuário existe.
+   */
+  private void validarUsuarioExiste(Long usuarioId) {
+    if (!usuarioRepository.existsById(usuarioId)) {
+      throw new EntityNotFoundException("Usuario", usuarioId);
+    }
+  }
+
+  /**
+   * Valida se um restaurante existe.
+   */
+  private void validarRestauranteExiste(Long restauranteId) {
+    if (!restauranteRepository.existsById(restauranteId)) {
+      throw new EntityNotFoundException("Restaurante", restauranteId);
+    }
+  }
+
+  /**
+   * Valida a transição de status do pedido.
+   */
+  private void validarTransicaoStatus(Pedido pedido, StatusPedido novoStatus) {
+    if (!isTransicaoValida(pedido.getStatus(), novoStatus)) {
+      throw new OrderStatusException(
+          pedido.getId(),
+          pedido.getStatus().name(),
+          novoStatus.name());
+    }
+  }
+
+  /**
+   * Valida se um produto pertence ao restaurante.
+   */
+  private void validarProdutoDoRestaurante(Produto produto, Long restauranteId) {
+    if (!produto.getRestaurante().getId().equals(restauranteId)) {
+      throw new BusinessException(
+          "Produto não pertence ao restaurante selecionado",
+          produto.getNome());
+    }
+  }
+
+  /**
+   * Valida se um produto está disponível.
+   */
+  private void validarProdutoDisponivel(Produto produto) {
+    if (!produto.isDisponivel()) {
+      throw new BusinessException("Produto indisponível", produto.getNome());
+    }
+  }
+
+  // ==================== MÉTODOS PRIVADOS - PROCESSAMENTO ====================
+
+  /**
+   * Processa os itens do pedido, validando produtos e criando ItemPedido.
+   */
+  private List<ItemPedido> processarItensPedido(List<ItemPedidoDTO> itensDTO, Long restauranteId) {
+    return itensDTO.stream()
+        .map(itemDTO -> processarItemPedido(itemDTO, restauranteId))
+        .collect(Collectors.toList());
+  }
+
+  /**
+   * Processa um item individual do pedido.
+   */
+  private ItemPedido processarItemPedido(ItemPedidoDTO itemDTO, Long restauranteId) {
+    // Buscar e validar produto
+    Produto produto = produtoRepository.findById(itemDTO.getProdutoId())
+        .orElseThrow(() -> new EntityNotFoundException("Produto", itemDTO.getProdutoId()));
+
+    validarProdutoDisponivel(produto);
+    validarProdutoDoRestaurante(produto, restauranteId);
+
+    // Criar item do pedido
+    ItemPedido item = new ItemPedido();
+    item.setProduto(produto);
+    item.setQuantidade(itemDTO.getQuantidade());
+    item.setPrecoUnitario(produto.getPreco());
+    item.setObservacoes(itemDTO.getObservacoes());
+    item.calcularSubtotal();
+
+    return item;
+  }
+
+  /**
+   * Calcula o subtotal de todos os itens do pedido.
+   */
+  private BigDecimal calcularSubtotal(List<ItemPedido> itens) {
+    return itens.stream()
+        .map(ItemPedido::getSubtotal)
+        .reduce(BigDecimal.ZERO, BigDecimal::add);
+  }
+
+  /**
+   * Calcula o subtotal de um item específico.
+   */
+  private BigDecimal calcularSubtotalItem(ItemPedidoDTO itemDTO) {
+    Produto produto = produtoRepository.findById(itemDTO.getProdutoId())
+        .orElseThrow(() -> new EntityNotFoundException("Produto", itemDTO.getProdutoId()));
+
+    return produto.getPreco().multiply(BigDecimal.valueOf(itemDTO.getQuantidade()));
+  }
+
+  /**
+   * Constrói um novo objeto Pedido com os dados fornecidos.
+   */
+  private Pedido construirPedido(
+      PedidoDTO dto,
+      Usuario usuario,
+      Restaurante restaurante,
+      BigDecimal subtotal,
+      BigDecimal taxaEntrega,
+      BigDecimal valorTotal) {
+
+    Pedido pedido = new Pedido();
+    pedido.setNumeroPedido(gerarNumeroPedido());
+    pedido.setUsuario(usuario);
+    pedido.setRestaurante(restaurante);
+    pedido.setDataPedido(LocalDateTime.now());
+    pedido.setStatus(StatusPedido.PENDENTE);
+    pedido.setEnderecoEntrega(dto.getEnderecoEntrega());
+    pedido.setCep(dto.getCep());
+    pedido.setObservacoes(dto.getObservacoes());
+    pedido.setFormaPagamento(dto.getFormaPagamento());
+    pedido.setSubtotal(subtotal);
+    pedido.setTaxaEntrega(taxaEntrega);
+    pedido.setValorTotal(valorTotal);
+
+    return pedido;
+  }
+
+  /**
+   * Associa os itens ao pedido salvo.
+   */
+  private void associarItensPedido(Pedido pedido, List<ItemPedido> itens) {
+    itens.forEach(item -> {
+      item.setPedido(pedido);
+      pedido.adicionarItem(item);
+    });
+  }
+
+  /**
+   * Gera um número único para o pedido.
+   */
+  private String gerarNumeroPedido() {
+    return "PED-" + LocalDateTime.now().toString().replaceAll("[^0-9]", "").substring(0, 12)
+        + "-" + UUID.randomUUID().toString().substring(0, 4).toUpperCase();
+  }
+
+  // ==================== MÉTODOS PRIVADOS - BUSCA ====================
+
+  /**
+   * Busca um pedido por ID ou lança exceção se não encontrado.
+   */
+  private Pedido buscarPedidoOuLancarExcecao(Long id) {
+    return pedidoRepository.findById(id)
+        .orElseThrow(() -> new EntityNotFoundException("Pedido", id));
+  }
+
+  // ==================== MÉTODOS PRIVADOS - REGRAS DE NEGÓCIO
+  // ====================
+
+  /**
+   * Verifica se a transição de status é válida.
+   */
   private boolean isTransicaoValida(StatusPedido statusAtual, StatusPedido novoStatus) {
-    // Implementar lógica de transições válidas
     return switch (statusAtual) {
-      case PENDENTE -> novoStatus == StatusPedido.CONFIRMADO || novoStatus == StatusPedido.CANCELADO;
-      case CONFIRMADO -> novoStatus == StatusPedido.PREPARANDO || novoStatus == StatusPedido.CANCELADO;
+      case PENDENTE -> novoStatus == StatusPedido.CONFIRMADO
+          || novoStatus == StatusPedido.CANCELADO;
+      case CONFIRMADO -> novoStatus == StatusPedido.PREPARANDO
+          || novoStatus == StatusPedido.CANCELADO;
       case PREPARANDO -> novoStatus == StatusPedido.SAIU_PARA_ENTREGA;
       case SAIU_PARA_ENTREGA -> novoStatus == StatusPedido.ENTREGUE;
-      default -> false;
+      case ENTREGUE, CANCELADO -> false;
     };
   }
 
+  /**
+   * Verifica se um pedido pode ser cancelado baseado no seu status.
+   */
   private boolean podeSerCancelado(StatusPedido status) {
     return status == StatusPedido.PENDENTE || status == StatusPedido.CONFIRMADO;
   }
 
-  @Override
-  public boolean isOwner(Long pedidoId) {
-    Long usuarioId = SecurityUtils.getCurrentUserId();
-    Pedido pedido = pedidoRepository.findById(pedidoId)
-        .orElseThrow(() -> new EntityNotFoundException("Pedido", pedidoId));
+  // ==================== MÉTODOS PRIVADOS - CONVERSÃO ====================
 
-    return pedido.getCliente().getId().equals(usuarioId);
+  /**
+   * Converte uma entidade Pedido para PedidoResponseDTO.
+   */
+  private PedidoResponseDTO converterParaDTO(Pedido pedido) {
+    return modelMapper.map(pedido, PedidoResponseDTO.class);
   }
 }

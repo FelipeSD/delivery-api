@@ -49,7 +49,6 @@ public class OpenApiConfig {
         .tags(List.of(
             new Tag().name("Restaurantes").description("Operações relacionadas a restaurantes"),
             new Tag().name("Produtos").description("Operações relacionadas a produtos"),
-            new Tag().name("Pedidos").description("Operações relacionadas a pedidos"),
-            new Tag().name("Clientes").description("Operações relacionadas a clientes")));
+            new Tag().name("Pedidos").description("Operações relacionadas a pedidos")));
   }
 }

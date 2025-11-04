@@ -3,6 +3,7 @@ package com.deliverytech.delivery_api.entities;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -10,9 +11,22 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import com.deliverytech.delivery_api.enums.Role;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import lombok.Data;
 
 @Entity
+@Data
 @Table(name = "usuario")
 public class Usuario implements UserDetails {
 
@@ -38,6 +52,13 @@ public class Usuario implements UserDetails {
 
   @Column(name = "data_criacao", nullable = false)
   private LocalDateTime dataCriacao = LocalDateTime.now();
+
+  private String telefone;
+
+  private String endereco;
+
+  @OneToMany(mappedBy = "usuario")
+  private List<Pedido> pedidos;
 
   // ✅ RELACIONAMENTO: Muitos usuários → Um restaurante
   @ManyToOne(fetch = FetchType.LAZY)
@@ -89,70 +110,5 @@ public class Usuario implements UserDetails {
   @Override
   public boolean isEnabled() {
     return ativo;
-  }
-
-  // Getters e Setters
-  public Long getId() {
-    return id;
-  }
-
-  public void setId(Long id) {
-    this.id = id;
-  }
-
-  public String getEmail() {
-    return email;
-  }
-
-  public void setEmail(String email) {
-    this.email = email;
-  }
-
-  public String getSenha() {
-    return senha;
-  }
-
-  public void setSenha(String senha) {
-    this.senha = senha;
-  }
-
-  public String getNome() {
-    return nome;
-  }
-
-  public void setNome(String nome) {
-    this.nome = nome;
-  }
-
-  public Role getRole() {
-    return role;
-  }
-
-  public void setRole(Role role) {
-    this.role = role;
-  }
-
-  public Boolean getAtivo() {
-    return ativo;
-  }
-
-  public void setAtivo(Boolean ativo) {
-    this.ativo = ativo;
-  }
-
-  public LocalDateTime getDataCriacao() {
-    return dataCriacao;
-  }
-
-  public void setDataCriacao(LocalDateTime dataCriacao) {
-    this.dataCriacao = dataCriacao;
-  }
-
-  public Restaurante getRestaurante() {
-    return restaurante;
-  }
-
-  public void setRestaurante(Restaurante restaurante) {
-    this.restaurante = restaurante;
   }
 }

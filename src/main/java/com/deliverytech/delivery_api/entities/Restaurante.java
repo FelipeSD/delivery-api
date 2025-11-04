@@ -3,7 +3,13 @@ package com.deliverytech.delivery_api.entities;
 import java.math.BigDecimal;
 import java.util.List;
 
-import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import lombok.Data;
 
 @Entity
@@ -13,10 +19,17 @@ public class Restaurante {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
+  @Column(nullable = false)
   private String nome;
+
   private String categoria;
+
+  @Column(nullable = false, unique = true, length = 18)
   private String cnpj;
+
+  @Column(nullable = false, unique = true)
   private String email;
+
   private String cidade;
   private String estado;
   private String endereco;

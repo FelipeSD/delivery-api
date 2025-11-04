@@ -16,7 +16,7 @@ public interface PedidoService {
 
   PedidoResponseDTO buscarPedidoPorId(Long id);
 
-  Page<PedidoResponseDTO> buscarPedidosPorCliente(Long clienteId, Pageable pageable);
+  Page<PedidoResponseDTO> buscarPedidosPorUsuario(Long usuarioId, Pageable pageable);
 
   Page<PedidoResponseDTO> buscarMeusPedidos(Pageable pageable);
 

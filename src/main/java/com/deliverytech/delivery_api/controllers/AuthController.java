@@ -18,7 +18,7 @@ import com.deliverytech.delivery_api.dtos.ApiResponseWrapper;
 import com.deliverytech.delivery_api.dtos.LoginRequestDTO;
 import com.deliverytech.delivery_api.dtos.LoginResponseDTO;
 import com.deliverytech.delivery_api.dtos.RegisterRequestDTO;
-import com.deliverytech.delivery_api.dtos.UserResponseDTO;
+import com.deliverytech.delivery_api.dtos.UsuarioResponseDTO;
 import com.deliverytech.delivery_api.entities.Usuario;
 import com.deliverytech.delivery_api.security.JwtUtil;
 import com.deliverytech.delivery_api.security.SecurityUtils;
@@ -70,7 +70,7 @@ public class AuthController {
 
       // Criar resposta
       Usuario usuario = (Usuario) userDetails;
-      UserResponseDTO userResponse = new UserResponseDTO(usuario);
+      UsuarioResponseDTO userResponse = new UsuarioResponseDTO(usuario);
       LoginResponseDTO loginResponse = new LoginResponseDTO(token, jwtExpiration,
           userResponse);
 
@@ -93,26 +93,26 @@ public class AuthController {
       @ApiResponse(responseCode = "400", description = "Dados inválidos ou email já em uso")
   })
   @PostMapping("/register")
-  public ResponseEntity<ApiResponseWrapper<UserResponseDTO>> register(
+  public ResponseEntity<ApiResponseWrapper<UsuarioResponseDTO>> register(
       @Valid @RequestBody RegisterRequestDTO registerRequest) {
     try {
       // Verificar se email já existe
       if (authService.existsByEmail(registerRequest.getEmail())) {
         return ResponseEntity.badRequest()
-            .body(new ApiResponseWrapper<UserResponseDTO>(false, null, "Email já está em uso"));
+            .body(new ApiResponseWrapper<UsuarioResponseDTO>(false, null, "Email já está em uso"));
       }
 
       // Criar usuário
       Usuario novoUsuario = authService.criarUsuario(registerRequest);
 
       // Retornar dados do usuário (sem "token" - usuário deve fazer login)
-      UserResponseDTO userResponse = new UserResponseDTO(novoUsuario);
-      ApiResponseWrapper<UserResponseDTO> response = new ApiResponseWrapper<>(true, userResponse,
+      UsuarioResponseDTO userResponse = new UsuarioResponseDTO(novoUsuario);
+      ApiResponseWrapper<UsuarioResponseDTO> response = new ApiResponseWrapper<>(true, userResponse,
           "Usuário criado com sucesso");
       return ResponseEntity.status(201).body(response);
     } catch (Exception e) {
       return ResponseEntity.status(500)
-          .body(new ApiResponseWrapper<UserResponseDTO>(false, null,
+          .body(new ApiResponseWrapper<UsuarioResponseDTO>(false, null,
               "Erro ao criar usuário: " + e.getMessage()));
     }
   }
@@ -123,16 +123,16 @@ public class AuthController {
       @ApiResponse(responseCode = "401", description = "Usuário não autenticado")
   })
   @GetMapping("/me")
-  public ResponseEntity<ApiResponseWrapper<UserResponseDTO>> getCurrentUser() {
+  public ResponseEntity<ApiResponseWrapper<UsuarioResponseDTO>> getCurrentUser() {
     try {
       Usuario usuarioLogado = SecurityUtils.getCurrentUser();
-      UserResponseDTO userResponse = new UserResponseDTO(usuarioLogado);
-      ApiResponseWrapper<UserResponseDTO> response = new ApiResponseWrapper<>(true, userResponse,
+      UsuarioResponseDTO userResponse = new UsuarioResponseDTO(usuarioLogado);
+      ApiResponseWrapper<UsuarioResponseDTO> response = new ApiResponseWrapper<>(true, userResponse,
           "Usuário autenticado retornado com sucesso");
       return ResponseEntity.ok(response);
     } catch (Exception e) {
       return ResponseEntity.status(500)
-          .body(new ApiResponseWrapper<UserResponseDTO>(false, null,
+          .body(new ApiResponseWrapper<UsuarioResponseDTO>(false, null,
               "Erro ao obter usuário autenticado: " + e.getMessage()));
     }
   }

@@ -1,21 +1,20 @@
 package com.deliverytech.delivery_api.factories;
 
-import com.deliverytech.delivery_api.dtos.ClienteDTO;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.deliverytech.delivery_api.dtos.ItemPedidoDTO;
 import com.deliverytech.delivery_api.dtos.PedidoDTO;
 import com.deliverytech.delivery_api.dtos.ProdutoDTO;
 import com.deliverytech.delivery_api.dtos.RestauranteDTO;
 import com.deliverytech.delivery_api.dtos.StatusPedidoDTO;
-import com.deliverytech.delivery_api.entities.Cliente;
 import com.deliverytech.delivery_api.entities.Pedido;
 import com.deliverytech.delivery_api.entities.Produto;
 import com.deliverytech.delivery_api.entities.Restaurante;
+import com.deliverytech.delivery_api.entities.Usuario;
 import com.deliverytech.delivery_api.enums.StatusPedido;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 public class EntityFactory {
 
@@ -54,45 +53,6 @@ public class EntityFactory {
     dto.setRestauranteId(restauranteId);
     dto.setImagemUrl("https://example.com/pizza.jpg");
     dto.setDisponivel(true);
-    return dto;
-  }
-
-  // Métodos para Cliente
-  public static Cliente criarClienteAtivo() {
-    Cliente c = new Cliente();
-    c.setNome("Maria Oliveira");
-    c.setEmail("maria@email.com");
-    c.setTelefone("11999999999");
-    c.setEndereco("Rua A, 100, São Paulo, SP");
-    c.setAtivo(true);
-    return c;
-  }
-
-  public static Cliente criarClienteInativo() {
-    Cliente c = new Cliente();
-    c.setNome("Carlos Souza");
-    c.setEmail("carlos@email.com");
-    c.setTelefone("11888888888");
-    c.setEndereco("Rua B, 200, São Paulo, SP");
-    c.setAtivo(false);
-    return c;
-  }
-
-  public static ClienteDTO criarClienteDTO() {
-    ClienteDTO dto = new ClienteDTO();
-    dto.setNome("João Silva");
-    dto.setEmail("joao@email.com");
-    dto.setTelefone("11777777777");
-    dto.setEndereco("Rua A, 123, São Paulo, SP");
-    return dto;
-  }
-
-  public static ClienteDTO criarClienteDTOInvalido() {
-    ClienteDTO dto = new ClienteDTO();
-    dto.setNome(""); // inválido
-    dto.setEmail(null); // inválido
-    dto.setTelefone("11777777777");
-    dto.setEndereco("Rua A, 123");
     return dto;
   }
 
@@ -159,9 +119,9 @@ public class EntityFactory {
   }
 
   // Métodos para Pedido
-  public static Pedido criarPedido(Cliente cliente, Restaurante restaurante) {
+  public static Pedido criarPedido(Usuario usuario, Restaurante restaurante) {
     Pedido p = new Pedido();
-    p.setCliente(cliente);
+    p.setUsuario(usuario);
     p.setRestaurante(restaurante);
     p.setDataPedido(LocalDateTime.now());
     p.setStatus(StatusPedido.PENDENTE);
@@ -174,9 +134,9 @@ public class EntityFactory {
     return p;
   }
 
-  public static PedidoDTO criarPedidoDTO(Long clienteId, Long restauranteId, Long produtoId) {
+  public static PedidoDTO criarPedidoDTO(Long usuarioId, Long restauranteId, Long produtoId) {
     PedidoDTO dto = new PedidoDTO();
-    dto.setClienteId(clienteId);
+    dto.setUsuarioId(usuarioId);
     dto.setRestauranteId(restauranteId);
     dto.setEnderecoEntrega("Rua A, 123 - São Paulo/SP");
     dto.setCep("46464584");
@@ -195,7 +155,7 @@ public class EntityFactory {
 
   public static PedidoDTO criarPedidoDTOInvalido() {
     PedidoDTO dto = new PedidoDTO();
-    dto.setClienteId(null); // inválido
+    dto.setUsuarioId(null); // inválido
     dto.setRestauranteId(null); // inválido
     dto.setItens(new ArrayList<>()); // vazio - inválido
     return dto;

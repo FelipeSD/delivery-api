@@ -24,50 +24,10 @@ Lembre-se: grandes projetos começam com fundações bem construídas!"
 - **Lombok** → redução de boilerplate (getters/setters/constructors)  
 - **Spring Boot DevTools** → suporte a hot reload no desenvolvimento  
 - **JUnit 5** → testes automatizados  
+
 ## 📋 Endpoints
+Para visualizar os endpoints disponíveis, acesse a documentação do swagger:
 
-### Gerais
-- `GET /health` — Status da aplicação (inclui versão Java)
-- `GET /info` — Informações da aplicação
-- `GET /h2-console` — Console do banco H2
-
-### 2.1 ClienteController
-Endpoints RESTful para gerenciamento de clientes:
-- `POST /api/clientes` — Cadastrar cliente
-- `GET /api/clientes/{id}` — Buscar cliente por ID
-- `GET /api/clientes` — Listar clientes ativos
-- `PUT /api/clientes/{id}` — Atualizar cliente
-- `PATCH /api/clientes/{id}/status` — Ativar/desativar cliente
-- `GET /api/clientes/email/{email}` — Buscar cliente por email
-
-### 2.2 RestauranteController
-Endpoints RESTful para restaurantes, com filtros e paginação:
-- `POST /api/restaurantes` — Cadastrar restaurante
-- `GET /api/restaurantes/{id}` — Buscar restaurante por ID
-- `GET /api/restaurantes` — Listar restaurantes disponíveis
-- `GET /api/restaurantes/categoria/{categoria}` — Listar por categoria
-- `PUT /api/restaurantes/{id}` — Atualizar restaurante
-- `GET /api/restaurantes/{id}/taxa-entrega/{cep}` — Calcular taxa de entrega por CEP
-
-### 2.3 ProdutoController
-Endpoints RESTful para produtos, com filtros por restaurante:
-- `POST /api/produtos` — Cadastrar produto
-- `GET /api/produtos/{id}` — Buscar produto por ID
-- `GET /api/restaurantes/{restauranteId}/produtos` — Listar produtos de um restaurante
-- `PUT /api/produtos/{id}` — Atualizar produto
-- `PATCH /api/produtos/{id}/disponibilidade` — Alterar disponibilidade do produto
-- `GET /api/produtos/categoria/{categoria}` — Listar produtos por categoria
-
-### 2.4 PedidoController
-Endpoints RESTful para operações de pedidos:
-- `POST /api/pedidos` — Criar pedido (transação complexa)
-- `GET /api/pedidos/{id}` — Buscar pedido completo por ID
-- `GET /api/clientes/{clienteId}/pedidos` — Histórico de pedidos do cliente
-- `PATCH /api/pedidos/{id}/status` — Atualizar status do pedido
-- `DELETE /api/pedidos/{id}` — Cancelar pedido
-- `POST /api/pedidos/calcular` — Calcular total do pedido sem salvar
-
-### 2.5 Documentação API (Swagger)
 - `GET /scalar` — Interface Swagger da API
 
 ---
