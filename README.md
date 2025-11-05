@@ -53,8 +53,28 @@ A aplicação será iniciada em:
 ## 🧪 Testes
 Para rodar os testes automatizados:
 
+1. Executar todos os testes: 
 ```bash
-./mvnw test
+mvn clean test
+```
+ou
+```bash
+mvn clean verify
+```
+
+2. Gerar relatório de cobertura: 
+```bash
+mvn jacoco:report 
+```
+
+3. Executar testes com verificação de cobertura: 
+```bash
+mvn clean test jacoco:check 
+```
+
+4. Gerar relatório completo: 
+```bash
+mvn clean test jacoco:report jacoco:check
 ```
 
 ## 📖 Próximos Passos

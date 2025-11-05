@@ -1,7 +1,6 @@
 package com.deliverytech.delivery_api.services;
 
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
@@ -14,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.deliverytech.delivery_api.dtos.ProdutoDTO;
+import com.deliverytech.delivery_api.dtos.ProdutoFiltroDTO;
 import com.deliverytech.delivery_api.dtos.ProdutoResponseDTO;
 import com.deliverytech.delivery_api.entities.Produto;
 import com.deliverytech.delivery_api.entities.Restaurante;
@@ -119,6 +119,19 @@ public class ProdutoServiceImpl implements ProdutoService {
             list -> new PageImpl<>(list, pageable, list.size())));
   }
 
+  public Page<ProdutoResponseDTO> buscarComFiltros(ProdutoFiltroDTO filtro, Pageable pageable) {
+    Page<Produto> produtos = produtoRepository.buscarComFiltros(
+        filtro.getNome(),
+        filtro.getCategoria(),
+        filtro.getPrecoMin(),
+        filtro.getPrecoMax(),
+        filtro.getDisponivel(),
+        filtro.getRestauranteId(),
+        pageable);
+
+    return produtos.map(p -> modelMapper.map(p, ProdutoResponseDTO.class));
+  }
+
   @Override
   @Transactional
   public ProdutoResponseDTO atualizarProduto(Long id, ProdutoDTO produtoDTO) {
@@ -186,31 +199,6 @@ public class ProdutoServiceImpl implements ProdutoService {
     }
 
     Page<Produto> produtos = produtoRepository.findByPrecoBetweenAndDisponivelTrue(precoMin, precoMax, pageable);
-
-    return produtos.stream()
-        .map(this::converterParaResponseDTO)
-        .collect(Collectors.collectingAndThen(Collectors.toList(),
-            list -> new PageImpl<>(list, pageable, list.size())));
-  }
-
-  @Override
-  @Transactional(readOnly = true)
-  public Page<ProdutoResponseDTO> buscarPorRestauranteECategoria(Long restauranteId, String categoria,
-      Pageable pageable) {
-    // Validar restaurante existe
-    if (!restauranteRepository.existsById(restauranteId)) {
-      throw new EntityNotFoundException("Restaurante", restauranteId);
-    }
-
-    if (categoria == null || categoria.trim().isEmpty()) {
-      throw new ValidationException("Categoria não pode ser vazia");
-    }
-
-    List<Produto> produtos = produtoRepository
-        .findByRestauranteIdAndDisponivelTrue(restauranteId, Pageable.unpaged())
-        .stream()
-        .filter(p -> p.getCategoria().equalsIgnoreCase(categoria))
-        .toList();
 
     return produtos.stream()
         .map(this::converterParaResponseDTO)

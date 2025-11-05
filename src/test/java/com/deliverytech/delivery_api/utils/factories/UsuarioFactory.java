@@ -1,4 +1,4 @@
-package com.deliverytech.delivery_api.factories;
+package com.deliverytech.delivery_api.utils.factories;
 
 import com.deliverytech.delivery_api.entities.Restaurante;
 import com.deliverytech.delivery_api.entities.Usuario;

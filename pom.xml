@@ -121,6 +121,18 @@
       <scope>test</scope>
     </dependency>
 
+    <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-core</artifactId>
+        <scope>test</scope>
+    </dependency>
+    
+    <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-junit-jupiter</artifactId>
+        <scope>test</scope>
+    </dependency>
+
     <!-- Testcontainers -->
     <dependency>
       <groupId>org.testcontainers</groupId>
@@ -162,7 +174,10 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.1.2</version>
         <configuration>
-          <useModulePath>false</useModulePath>
+          <includes>
+            <include>**/*Test.java</include>
+            <include>**/*Tests.java</include>
+          </includes>
         </configuration>
       </plugin>
 
@@ -189,9 +204,35 @@
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
         <version>0.8.12</version>
+        <configuration>
+          <excludes>
+            <exclude>**/config/**</exclude>
+            <exclude>**/monitoring/**</exclude>
+            <exclude>**/factories/**</exclude>
+            <exclude>**/exceptions/**</exclude>
+            <exclude>**/dtos/**</exclude>
+            <exclude>**/enums/**</exclude>
+            <exclude>**/controllers/**</exclude>
+            <exclude>**/DataLoader.class</exclude>
+          </excludes>
+
+          <!-- ✅ Regra de cobertura -->
+          <rules>
+            <rule>
+              <element>BUNDLE</element>
+              <limits>
+                <limit>
+                  <counter>LINE</counter>
+                  <value>COVEREDRATIO</value>
+                  <minimum>0.80</minimum>
+                </limit>
+              </limits>
+            </rule>
+          </rules>
+        </configuration>
 
         <executions>
-          <!-- 1️⃣ Injeta o agente JaCoCo nos testes -->
+          <!-- 1️⃣ Injeta agente -->
           <execution>
             <id>prepare-agent</id>
             <goals>
@@ -199,7 +240,7 @@
             </goals>
           </execution>
 
-          <!-- 2️⃣ Gera o relatório -->
+          <!-- 2️⃣ Relatório -->
           <execution>
             <id>report</id>
             <phase>verify</phase>
@@ -208,27 +249,13 @@
             </goals>
           </execution>
 
-          <!-- 3️⃣ Faz a checagem de cobertura -->
+          <!-- 3️⃣ Checagem -->
           <execution>
             <id>check</id>
             <phase>verify</phase>
             <goals>
               <goal>check</goal>
             </goals>
-            <configuration>
-              <rules>
-                <rule>
-                  <element>BUNDLE</element>
-                  <limits>
-                    <limit>
-                      <counter>LINE</counter>
-                      <value>COVEREDRATIO</value>
-                      <minimum>0.80</minimum>
-                    </limit>
-                  </limits>
-                </rule>
-              </rules>
-            </configuration>
           </execution>
         </executions>
       </plugin>

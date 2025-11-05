@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import com.deliverytech.delivery_api.entities.Produto;
 import com.deliverytech.delivery_api.entities.Restaurante;
+
 @Repository
 public interface ProdutoRepository extends JpaRepository<Produto, Long> {
   // Buscar produtos por restaurante
@@ -39,6 +40,25 @@ public interface ProdutoRepository extends JpaRepository<Produto, Long> {
   List<Produto> findByDisponivelTrueOrderByPrecoAsc();
 
   List<Produto> findByDisponivelTrueOrderByPrecoDesc();
+
+  @Query("""
+          SELECT p FROM Produto p
+          WHERE (:nome IS NULL OR LOWER(p.nome) LIKE LOWER(CONCAT('%', :nome, '%')))
+            AND (:categoria IS NULL OR LOWER(p.categoria) LIKE LOWER(CONCAT('%', :categoria, '%')))
+            AND (:precoMin IS NULL OR p.preco >= :precoMin)
+            AND (:precoMax IS NULL OR p.preco <= :precoMax)
+            AND (:disponivel IS NULL OR p.disponivel = :disponivel)
+            AND (:restauranteId IS NULL OR p.restaurante.id = :restauranteId)
+          ORDER BY p.nome ASC
+      """)
+  Page<Produto> buscarComFiltros(
+      @Param("nome") String nome,
+      @Param("categoria") String categoria,
+      @Param("precoMin") BigDecimal precoMin,
+      @Param("precoMax") BigDecimal precoMax,
+      @Param("disponivel") Boolean disponivel,
+      @Param("restauranteId") Long restauranteId,
+      Pageable pageable);
 
   // Verifica se usuário é dono do produto
   @Query("SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END " +

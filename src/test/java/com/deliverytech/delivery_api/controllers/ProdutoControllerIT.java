@@ -1,39 +1,47 @@
 package com.deliverytech.delivery_api.controllers;
 
-import com.deliverytech.delivery_api.base.BaseIntegrationTest;
-import com.deliverytech.delivery_api.dtos.ProdutoDTO;
-import com.deliverytech.delivery_api.entities.Produto;
-import com.deliverytech.delivery_api.entities.Restaurante;
-import com.deliverytech.delivery_api.factories.EntityFactory;
-import com.deliverytech.delivery_api.factories.UsuarioFactory;
-import com.deliverytech.delivery_api.repositories.ProdutoRepository;
-import com.deliverytech.delivery_api.repositories.RestauranteRepository;
-import com.deliverytech.delivery_api.repositories.UsuarioRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.Map;
-
-import static com.deliverytech.delivery_api.matchers.ApiResponseMatchers.*;
+import static com.deliverytech.delivery_api.utils.matchers.ApiResponseMatchers.erro;
+import static com.deliverytech.delivery_api.utils.matchers.ApiResponseMatchers.mensagem;
+import static com.deliverytech.delivery_api.utils.matchers.ApiResponseMatchers.sucesso;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import com.deliverytech.delivery_api.dtos.ProdutoDTO;
+import com.deliverytech.delivery_api.entities.Produto;
+import com.deliverytech.delivery_api.entities.Restaurante;
+import com.deliverytech.delivery_api.repositories.ProdutoRepository;
+import com.deliverytech.delivery_api.repositories.RestauranteRepository;
+import com.deliverytech.delivery_api.repositories.UsuarioRepository;
+import com.deliverytech.delivery_api.utils.base.BaseIntegrationTest;
+import com.deliverytech.delivery_api.utils.factories.EntityFactory;
+import com.deliverytech.delivery_api.utils.factories.UsuarioFactory;
+
 @DisplayName("Teste de Integração do ProdutoController")
 class ProdutoControllerIT extends BaseIntegrationTest {
 
-  @Autowired private ProdutoRepository produtoRepository;
+  @Autowired
+  private ProdutoRepository produtoRepository;
 
-  @Autowired private RestauranteRepository restauranteRepository;
-  
-  @Autowired private UsuarioRepository usuarioRepository;
-  
-  @Autowired private UsuarioFactory usuarioFactory;
+  @Autowired
+  private RestauranteRepository restauranteRepository;
+
+  @Autowired
+  private UsuarioRepository usuarioRepository;
+
+  @Autowired
+  private UsuarioFactory usuarioFactory;
 
   private ProdutoDTO produtoDTO;
   private Restaurante restauranteSalvo;
@@ -45,12 +53,13 @@ class ProdutoControllerIT extends BaseIntegrationTest {
     restauranteSalvo = restauranteRepository.save(EntityFactory.criarRestaurante());
     produtoSalvo = produtoRepository.save(EntityFactory.criarProduto(restauranteSalvo));
     produtoDTO = EntityFactory.criarProdutoDTO(restauranteSalvo.getId());
-    
+
     var usuario = usuarioRepository.save(usuarioFactory.criarUsuarioRestaurante(restauranteSalvo));
     restauranteJwtToken = loginAndGetToken(usuario.getEmail(), "123456");
   }
 
   @Test
+  @Order(1)
   void deveCadastrarProdutoComSucesso() throws Exception {
     postJson("/api/produtos", restauranteJwtToken, produtoDTO)
         .andDo(print())
@@ -66,6 +75,7 @@ class ProdutoControllerIT extends BaseIntegrationTest {
   }
 
   @Test
+  @Order(2)
   void deveRejeitarProdutoComDadosInvalidos() throws Exception {
     produtoDTO.setNome("");
     produtoDTO.setPreco(new BigDecimal("-10.00"));
@@ -78,6 +88,7 @@ class ProdutoControllerIT extends BaseIntegrationTest {
   }
 
   @Test
+  @Order(3)
   void deveRejeitarProdutoSemRestaurante() throws Exception {
     produtoDTO.setRestauranteId(999L);
 
@@ -88,6 +99,7 @@ class ProdutoControllerIT extends BaseIntegrationTest {
   }
 
   @Test
+  @Order(4)
   void deveBuscarProdutoPorId() throws Exception {
     getJson("/api/produtos/{id}", restauranteJwtToken, produtoSalvo.getId())
         .andDo(print())
@@ -95,12 +107,13 @@ class ProdutoControllerIT extends BaseIntegrationTest {
         .andExpect(sucesso())
         .andExpect(jsonPath("$.data.id").value(produtoSalvo.getId()))
         .andExpect(jsonPath("$.data.nome").value("Pizza Calabresa"))
-        .andExpect(jsonPath("$.data.preco").value(42.90))
+        .andExpect(jsonPath("$.data.preco").value(45.90))
         .andExpect(jsonPath("$.data.categoria").value("Pizzas"))
         .andExpect(mensagem("Produto encontrado com sucesso"));
   }
 
   @Test
+  @Order(5)
   void deveRetornar404ParaProdutoInexistente() throws Exception {
     getJson("/api/produtos/{id}", restauranteJwtToken, 999L)
         .andExpect(status().isNotFound())
@@ -109,6 +122,7 @@ class ProdutoControllerIT extends BaseIntegrationTest {
   }
 
   @Test
+  @Order(6)
   void deveListarProdutosPorRestaurante() throws Exception {
     Map<String, String> params = new HashMap<>();
     params.put("page", "0");
@@ -127,6 +141,7 @@ class ProdutoControllerIT extends BaseIntegrationTest {
   }
 
   @Test
+  @Order(7)
   void deveListarProdutosPorCategoria() throws Exception {
     Map<String, String> params = new HashMap<>();
     params.put("page", "0");
@@ -141,6 +156,7 @@ class ProdutoControllerIT extends BaseIntegrationTest {
   }
 
   @Test
+  @Order(8)
   void deveAtualizarProdutoComSucesso() throws Exception {
     produtoDTO.setNome("Pizza Margherita Premium");
     produtoDTO.setPreco(new BigDecimal("55.90"));
@@ -155,8 +171,11 @@ class ProdutoControllerIT extends BaseIntegrationTest {
   }
 
   @Test
+  @Order(9)
   void deveAlterarDisponibilidadeDoProduto() throws Exception {
-    patchJson("/api/produtos/{id}/disponibilidade", restauranteJwtToken, null, produtoSalvo.getId())
+    Map<String, Object> body = Map.of("disponivel", false);
+
+    patchJson("/api/produtos/{id}/disponibilidade", restauranteJwtToken, body, produtoSalvo.getId())
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(sucesso())
@@ -165,10 +184,11 @@ class ProdutoControllerIT extends BaseIntegrationTest {
   }
 
   @Test
+  @Order(10)
   void deveBuscarProdutosPorFaixaDePreco() throws Exception {
     Map<String, String> params = new HashMap<>();
-    params.put("precoMinimo", "40.00");
-    params.put("precoMaximo", "50.00");
+    params.put("precoMin", "40.00");
+    params.put("precoMax", "50.00");
     params.put("page", "0");
     params.put("size", "10");
     getJson("/api/produtos/buscar", restauranteJwtToken, params)
@@ -177,14 +197,15 @@ class ProdutoControllerIT extends BaseIntegrationTest {
         .andExpect(sucesso())
         .andExpect(jsonPath("$.content").isArray())
         .andExpect(jsonPath("$.content", hasSize(1)))
-        .andExpect(jsonPath("$.content[0].preco").value(42.90));
+        .andExpect(jsonPath("$.content[0].preco").value(45.90));
   }
 
   @Test
+  @Order(11)
   void deveRetornarListaVaziaQuandoNaoHouverProdutosNaFaixaDePreco() throws Exception {
     Map<String, String> params = new HashMap<>();
-    params.put("precoMinimo", "100.00");
-    params.put("precoMaximo", "200.00");
+    params.put("precoMin", "100.00");
+    params.put("precoMax", "200.00");
     params.put("page", "0");
     params.put("size", "10");
     getJson("/api/produtos/buscar", restauranteJwtToken, params)
@@ -195,6 +216,7 @@ class ProdutoControllerIT extends BaseIntegrationTest {
   }
 
   @Test
+  @Order(12)
   void deveRejeitarCadastroDeProdutoDuplicado() throws Exception {
     produtoDTO.setNome("Pizza Calabresa");
 
@@ -202,5 +224,12 @@ class ProdutoControllerIT extends BaseIntegrationTest {
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.success").value(false))
         .andExpect(erro("BUSINESS_ERROR"));
+  }
+
+  @Test
+  @Order(13)
+  void deveDeletarProduto() throws Exception {
+    deleteJson("/api/produtos/{id}", restauranteJwtToken, produtoSalvo.getId())
+        .andExpect(status().isNoContent());
   }
 }

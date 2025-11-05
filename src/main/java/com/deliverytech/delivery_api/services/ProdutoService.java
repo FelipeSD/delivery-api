@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import com.deliverytech.delivery_api.dtos.ProdutoDTO;
+import com.deliverytech.delivery_api.dtos.ProdutoFiltroDTO;
 import com.deliverytech.delivery_api.dtos.ProdutoResponseDTO;
 
 public interface ProdutoService {
@@ -46,18 +47,14 @@ public interface ProdutoService {
   Page<ProdutoResponseDTO> buscarPorFaixaPreco(BigDecimal precoMin, BigDecimal precoMax, Pageable pageable);
 
   /**
-   * Buscar produtos por restaurante e categoria
-   */
-  Page<ProdutoResponseDTO> buscarPorRestauranteECategoria(Long restauranteId, String categoria, Pageable pageable);
-
-  /**
    * Buscar produtos por filtros diversos
    */
-//  Page<ProdutoResponseDTO> buscarPorFiltro();
+  Page<ProdutoResponseDTO> buscarComFiltros(ProdutoFiltroDTO filtro, Pageable pageable);
 
   /**
    * isOwner verifica se o usuário é o dono do produto
-   * @param id
+   * 
+   * @param produtoId
    */
   boolean isOwner(Long produtoId);
 

@@ -1,8 +1,8 @@
 package com.deliverytech.delivery_api.controllers;
 
-import static com.deliverytech.delivery_api.matchers.ApiResponseMatchers.erro;
-import static com.deliverytech.delivery_api.matchers.ApiResponseMatchers.mensagem;
-import static com.deliverytech.delivery_api.matchers.ApiResponseMatchers.sucesso;
+import static com.deliverytech.delivery_api.utils.matchers.ApiResponseMatchers.erro;
+import static com.deliverytech.delivery_api.utils.matchers.ApiResponseMatchers.mensagem;
+import static com.deliverytech.delivery_api.utils.matchers.ApiResponseMatchers.sucesso;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -20,7 +20,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.deliverytech.delivery_api.base.BaseIntegrationTest;
 import com.deliverytech.delivery_api.dtos.ItemPedidoDTO;
 import com.deliverytech.delivery_api.dtos.PedidoDTO;
 import com.deliverytech.delivery_api.dtos.StatusPedidoDTO;
@@ -29,12 +28,13 @@ import com.deliverytech.delivery_api.entities.Produto;
 import com.deliverytech.delivery_api.entities.Restaurante;
 import com.deliverytech.delivery_api.entities.Usuario;
 import com.deliverytech.delivery_api.enums.StatusPedido;
-import com.deliverytech.delivery_api.factories.EntityFactory;
-import com.deliverytech.delivery_api.factories.UsuarioFactory;
 import com.deliverytech.delivery_api.repositories.PedidoRepository;
 import com.deliverytech.delivery_api.repositories.ProdutoRepository;
 import com.deliverytech.delivery_api.repositories.RestauranteRepository;
 import com.deliverytech.delivery_api.repositories.UsuarioRepository;
+import com.deliverytech.delivery_api.utils.base.BaseIntegrationTest;
+import com.deliverytech.delivery_api.utils.factories.EntityFactory;
+import com.deliverytech.delivery_api.utils.factories.UsuarioFactory;
 
 @DisplayName("Teste de Integração do PedidoController")
 class PedidoControllerIT extends BaseIntegrationTest {

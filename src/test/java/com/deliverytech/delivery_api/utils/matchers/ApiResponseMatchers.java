@@ -1,4 +1,4 @@
-package com.deliverytech.delivery_api.matchers;
+package com.deliverytech.delivery_api.utils.matchers;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 

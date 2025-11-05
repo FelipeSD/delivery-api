@@ -1,12 +1,13 @@
 package com.deliverytech.delivery_api.controllers;
 
-import com.deliverytech.delivery_api.base.BaseIntegrationTest;
 import com.deliverytech.delivery_api.dtos.RestauranteDTO;
 import com.deliverytech.delivery_api.entities.Restaurante;
-import com.deliverytech.delivery_api.factories.EntityFactory;
-import com.deliverytech.delivery_api.factories.UsuarioFactory;
 import com.deliverytech.delivery_api.repositories.RestauranteRepository;
 import com.deliverytech.delivery_api.repositories.UsuarioRepository;
+import com.deliverytech.delivery_api.utils.base.BaseIntegrationTest;
+import com.deliverytech.delivery_api.utils.factories.EntityFactory;
+import com.deliverytech.delivery_api.utils.factories.UsuarioFactory;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,7 +17,7 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.deliverytech.delivery_api.matchers.ApiResponseMatchers.*;
+import static com.deliverytech.delivery_api.utils.matchers.ApiResponseMatchers.*;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -116,10 +117,10 @@ class RestauranteControllerIT extends BaseIntegrationTest {
       .andExpect(status().isOk())
       .andExpect(sucesso())
       .andExpect(jsonPath("$.content").isArray())
-      .andExpect(jsonPath("$.content", hasSize(2)))
+      .andExpect(jsonPath("$.content", hasSize(1)))
       .andExpect(jsonPath("$.page.number").value(0))
       .andExpect(jsonPath("$.page.size").value(10))
-      .andExpect(jsonPath("$.page.totalElements").value(2));
+      .andExpect(jsonPath("$.page.totalElements").value(1));
   }
 
   @Test

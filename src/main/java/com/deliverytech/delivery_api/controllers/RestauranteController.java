@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.deliverytech.delivery_api.dtos.ApiResponseWrapper;
 import com.deliverytech.delivery_api.dtos.PagedResponseWrapper;
 import com.deliverytech.delivery_api.dtos.RestauranteDTO;
+import com.deliverytech.delivery_api.dtos.RestauranteFiltroDTO;
 import com.deliverytech.delivery_api.dtos.RestauranteResponseDTO;
 import com.deliverytech.delivery_api.dtos.TaxaEntregaResponseDTO;
 import com.deliverytech.delivery_api.services.RestauranteService;
@@ -69,6 +70,17 @@ public class RestauranteController {
       return ResponseEntity.ok(response);
     }
     return ResponseEntity.notFound().build();
+  }
+
+  @Operation(summary = "Buscar restaurante com filtros", description = "Filtra restaurante por nome")
+  @GetMapping("/buscar")
+  public ResponseEntity<PagedResponseWrapper<RestauranteResponseDTO>> buscarProdutos(
+      RestauranteFiltroDTO filtro,
+      @PageableDefault(size = 20) Pageable pageable) {
+
+    Page<RestauranteResponseDTO> produtos = restauranteService.buscarPorNome(filtro.getNome(), pageable);
+    PagedResponseWrapper<RestauranteResponseDTO> response = new PagedResponseWrapper<>(true, produtos);
+    return ResponseEntity.ok(response);
   }
 
   // GET /api/restaurantes - Listar disponíveis

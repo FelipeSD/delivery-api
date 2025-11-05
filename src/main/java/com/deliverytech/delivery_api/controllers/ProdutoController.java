@@ -1,6 +1,5 @@
 package com.deliverytech.delivery_api.controllers;
 
-import java.math.BigDecimal;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,12 +19,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.deliverytech.delivery_api.dtos.ApiResponseWrapper;
 import com.deliverytech.delivery_api.dtos.PagedResponseWrapper;
 import com.deliverytech.delivery_api.dtos.ProdutoDTO;
+import com.deliverytech.delivery_api.dtos.ProdutoFiltroDTO;
+import com.deliverytech.delivery_api.dtos.ProdutoPatchDTO;
 import com.deliverytech.delivery_api.dtos.ProdutoResponseDTO;
 import com.deliverytech.delivery_api.entities.Usuario;
 import com.deliverytech.delivery_api.monitoring.audit.AuditService;
@@ -120,8 +120,8 @@ public class ProdutoController {
   @PatchMapping("/produtos/{id}/disponibilidade")
   @PreAuthorize("hasRole('ADMIN') or (hasRole('RESTAURANTE') and @produtoService.isOwner(#id))")
   public ResponseEntity<ApiResponseWrapper<ProdutoResponseDTO>> alterarDisponibilidade(@PathVariable Long id,
-      @RequestParam boolean disponivel) {
-    ProdutoResponseDTO produto = produtoService.alterarDisponibilidade(id, disponivel);
+      @RequestBody ProdutoPatchDTO dto) {
+    ProdutoResponseDTO produto = produtoService.alterarDisponibilidade(id, dto.isDisponivel());
     ApiResponseWrapper<ProdutoResponseDTO> response = new ApiResponseWrapper<>(true, produto,
         "Produto atualizado com sucesso");
     return ResponseEntity.ok(response);
@@ -136,30 +136,17 @@ public class ProdutoController {
     return ResponseEntity.ok(response);
   }
 
-  // GET /api/produtos/buscar?nome={nome} - Busca por nome
-  @Operation(summary = "Buscar produtos por filtros", description = "Retorna produtos filtrados por faixa de preço e categoria")
+  @Operation(summary = "Buscar produtos com filtros", description = "Filtra produtos por nome, categoria, preço, disponibilidade e restaurante")
   @GetMapping("/produtos/buscar")
   public ResponseEntity<PagedResponseWrapper<ProdutoResponseDTO>> buscarProdutos(
-      @RequestParam(required = false) BigDecimal precoMin,
-      @RequestParam(required = false) BigDecimal precoMax,
-      @RequestParam(required = false) String categoria,
+      ProdutoFiltroDTO filtro,
       @PageableDefault(size = 20) Pageable pageable) {
 
-    Page<ProdutoResponseDTO> produtos;
-
-    if (precoMin != null && precoMax != null) {
-      produtos = produtoService.buscarPorFaixaPreco(precoMin, precoMax, pageable);
-    } else if (categoria != null && !categoria.isEmpty()) {
-      produtos = produtoService.buscarPorRestauranteECategoria(null, categoria, pageable);
-    } else {
-      produtos = Page.empty(pageable);
-    }
-
+    Page<ProdutoResponseDTO> produtos = produtoService.buscarComFiltros(filtro, pageable);
     PagedResponseWrapper<ProdutoResponseDTO> response = new PagedResponseWrapper<>(true, produtos);
     return ResponseEntity.ok(response);
   }
 
-  // DELETE /api/produtos/{id} - Deletar produto
   @Operation(summary = "Deletar produto", description = "Remove um produto existente")
   @ApiResponses(value = {
       @ApiResponse(responseCode = "204", description = "Produto deletado com sucesso"),

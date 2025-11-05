@@ -1,4 +1,4 @@
-package com.deliverytech.delivery_api.factories;
+package com.deliverytech.delivery_api.utils.factories;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

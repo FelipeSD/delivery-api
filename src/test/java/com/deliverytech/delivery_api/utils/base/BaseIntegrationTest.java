@@ -1,4 +1,4 @@
-package com.deliverytech.delivery_api.base;
+package com.deliverytech.delivery_api.utils.base;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
