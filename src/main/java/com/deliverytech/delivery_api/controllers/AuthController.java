@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,7 +22,6 @@ import com.deliverytech.delivery_api.dtos.RegisterRequestDTO;
 import com.deliverytech.delivery_api.dtos.UsuarioResponseDTO;
 import com.deliverytech.delivery_api.entities.Usuario;
 import com.deliverytech.delivery_api.security.JwtUtil;
-import com.deliverytech.delivery_api.security.SecurityUtils;
 import com.deliverytech.delivery_api.services.AuthService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -123,9 +123,8 @@ public class AuthController {
       @ApiResponse(responseCode = "401", description = "Usuário não autenticado")
   })
   @GetMapping("/me")
-  public ResponseEntity<ApiResponseWrapper<UsuarioResponseDTO>> getCurrentUser() {
+  public ResponseEntity<ApiResponseWrapper<UsuarioResponseDTO>> getCurrentUser(@AuthenticationPrincipal Usuario usuarioLogado) {
     try {
-      Usuario usuarioLogado = SecurityUtils.getCurrentUser();
       UsuarioResponseDTO userResponse = new UsuarioResponseDTO(usuarioLogado);
       ApiResponseWrapper<UsuarioResponseDTO> response = new ApiResponseWrapper<>(true, userResponse,
           "Usuário autenticado retornado com sucesso");

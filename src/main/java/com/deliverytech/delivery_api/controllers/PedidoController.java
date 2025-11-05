@@ -3,8 +3,6 @@ package com.deliverytech.delivery_api.controllers;
 import java.math.BigDecimal;
 import java.util.List;
 
-import jakarta.validation.Valid;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,6 +24,7 @@ import com.deliverytech.delivery_api.dtos.ApiResponseWrapper;
 import com.deliverytech.delivery_api.dtos.ItemPedidoDTO;
 import com.deliverytech.delivery_api.dtos.PagedResponseWrapper;
 import com.deliverytech.delivery_api.dtos.PedidoDTO;
+import com.deliverytech.delivery_api.dtos.PedidoFiltroDTO;
 import com.deliverytech.delivery_api.dtos.PedidoResponseDTO;
 import com.deliverytech.delivery_api.dtos.StatusPedidoDTO;
 import com.deliverytech.delivery_api.services.PedidoService;
@@ -34,6 +33,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/pedidos")
@@ -80,7 +80,7 @@ public class PedidoController {
       @ApiResponse(responseCode = "404", description = "Usuario não encontrado")
   })
   @GetMapping("/usuario/{usuarioId}")
-  @PreAuthorize("hasRole('ADMIN') or @pedidoService.isOwner(#id)")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<PagedResponseWrapper<PedidoResponseDTO>> buscarPorUsuario(
       @PathVariable Long usuarioId,
       @PageableDefault(size = 20) Pageable pageable) {
@@ -90,15 +90,17 @@ public class PedidoController {
   }
 
   // Criar endpoint meus para trazer os pedidos do usuario logado
-  @Operation(summary = "Listar meus pedidos", description = "Retorna todos os pedidos feitos pelo usuário logado")
+  @Operation(summary = "Listar meus pedidos", description = "Listar meus pedidos com filtros opcionais com paginação")
   @ApiResponses(value = {
       @ApiResponse(responseCode = "200", description = "Lista de pedidos retornada com sucesso")
   })
   @GetMapping("/meus")
   @PreAuthorize("hasRole('CLIENTE')")
   public ResponseEntity<PagedResponseWrapper<PedidoResponseDTO>> buscarMeusPedidos(
+      PedidoFiltroDTO filtro,
       @PageableDefault(size = 20) Pageable pageable) {
-    Page<PedidoResponseDTO> pedidos = pedidoService.buscarMeusPedidos(pageable);
+
+    Page<PedidoResponseDTO> pedidos = pedidoService.buscarMeusPedidos(filtro, pageable);
     PagedResponseWrapper<PedidoResponseDTO> response = new PagedResponseWrapper<>(true, pedidos);
     return ResponseEntity.ok(response);
   }
@@ -109,7 +111,7 @@ public class PedidoController {
       @ApiResponse(responseCode = "404", description = "Restaurante não encontrado")
   })
   @GetMapping("/restaurante/{restauranteId}")
-  @PreAuthorize("hasRole('ADMIN') or (hasRole('RESTAURANTE') and #restauranteId == principal.id)")
+  @PreAuthorize("hasRole('ADMIN') or (hasRole('RESTAURANTE') and #restauranteId == principal.restaurante.id)")
   public ResponseEntity<PagedResponseWrapper<PedidoResponseDTO>> buscarPorRestaurante(
       @PathVariable Long restauranteId,
       @PageableDefault(size = 20) Pageable pageable) {

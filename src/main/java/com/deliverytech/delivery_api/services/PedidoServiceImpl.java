@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.deliverytech.delivery_api.dtos.ItemPedidoDTO;
 import com.deliverytech.delivery_api.dtos.PedidoDTO;
+import com.deliverytech.delivery_api.dtos.PedidoFiltroDTO;
 import com.deliverytech.delivery_api.dtos.PedidoResponseDTO;
 import com.deliverytech.delivery_api.entities.ItemPedido;
 import com.deliverytech.delivery_api.entities.Pedido;
@@ -154,17 +155,25 @@ public class PedidoServiceImpl implements PedidoService {
   /**
    * Busca pedidos do usuário autenticado.
    * 
+   * @param filtro Filtro dos pedidos
    * @param pageable Configuração de paginação
    * @return Page de PedidoResponseDTO
    */
   @Override
   @Transactional(readOnly = true)
-  public Page<PedidoResponseDTO> buscarMeusPedidos(Pageable pageable) {
+  public Page<PedidoResponseDTO> buscarMeusPedidos(PedidoFiltroDTO filtro, Pageable pageable) {
     Long usuarioId = SecurityUtils.getCurrentUserId();
-    log.debug("Buscando pedidos do usuário autenticado ID: {}", usuarioId);
 
-    Page<Pedido> pedidosPage = pedidoRepository.findByUsuarioIdOrderByDataPedidoDesc(usuarioId, pageable);
-    return pedidosPage.map(this::converterParaDTO);
+    Page<Pedido> pedidos = pedidoRepository.buscarPedidosComFiltro(
+        usuarioId,
+        filtro.getStatus(),
+        filtro.getDataInicio() != null ? filtro.getDataInicio().atStartOfDay() : null,
+        filtro.getDataFim() != null ? filtro.getDataFim().atTime(23, 59, 59) : null,
+        filtro.getValorMinimo(),
+        filtro.getValorMaximo(),
+        pageable);
+
+    return pedidos.map(p -> modelMapper.map(p, PedidoResponseDTO.class));
   }
 
   /**

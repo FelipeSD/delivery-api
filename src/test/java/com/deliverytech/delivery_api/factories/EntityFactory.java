@@ -37,7 +37,7 @@ public class EntityFactory {
     Produto p = new Produto();
     p.setNome("Pizza Calabresa");
     p.setDescricao("Molho de tomate, calabresa e cebola");
-    p.setPreco(new BigDecimal("42.90"));
+    p.setPreco(new BigDecimal("45.90"));
     p.setCategoria("Pizzas");
     p.setRestaurante(restaurante);
     p.setDisponivel(true);

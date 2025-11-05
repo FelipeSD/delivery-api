@@ -38,6 +38,25 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
   // Buscar pedidos por período
   Page<Pedido> findByDataPedidoBetweenOrderByDataPedidoDesc(LocalDateTime inicio, LocalDateTime fim, Pageable pageable);
 
+  @Query("""
+          SELECT p FROM Pedido p
+          WHERE p.usuario.id = :usuarioId
+            AND (:status IS NULL OR p.status = :status)
+            AND (:dataInicio IS NULL OR p.dataPedido >= :dataInicio)
+            AND (:dataFim IS NULL OR p.dataPedido <= :dataFim)
+            AND (:valorMinimo IS NULL OR p.valorTotal >= :valorMinimo)
+            AND (:valorMaximo IS NULL OR p.valorTotal <= :valorMaximo)
+          ORDER BY p.dataPedido DESC
+      """)
+  Page<Pedido> buscarPedidosComFiltro(
+      @Param("usuarioId") Long usuarioId,
+      @Param("status") StatusPedido status,
+      @Param("dataInicio") LocalDateTime dataInicio,
+      @Param("dataFim") LocalDateTime dataFim,
+      @Param("valorMinimo") BigDecimal valorMinimo,
+      @Param("valorMaximo") BigDecimal valorMaximo,
+      Pageable pageable);
+
   // Buscar pedidos do dia
   @Query("SELECT p FROM Pedido p WHERE p.dataPedido >= :inicio AND p.dataPedido < :fim ORDER BY p.dataPedido DESC")
   Page<Pedido> findPedidosDoDia(@Param("inicio") LocalDateTime inicio, @Param("fim") LocalDateTime fim,

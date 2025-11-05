@@ -10,6 +10,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,8 +27,8 @@ import com.deliverytech.delivery_api.dtos.ApiResponseWrapper;
 import com.deliverytech.delivery_api.dtos.PagedResponseWrapper;
 import com.deliverytech.delivery_api.dtos.ProdutoDTO;
 import com.deliverytech.delivery_api.dtos.ProdutoResponseDTO;
+import com.deliverytech.delivery_api.entities.Usuario;
 import com.deliverytech.delivery_api.monitoring.audit.AuditService;
-import com.deliverytech.delivery_api.security.SecurityUtils;
 import com.deliverytech.delivery_api.services.ProdutoService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -58,10 +59,10 @@ public class ProdutoController {
   @PostMapping("/produtos")
   @PreAuthorize("hasRole('RESTAURANTE') or hasRole('ADMIN')")
   public ResponseEntity<ApiResponseWrapper<ProdutoResponseDTO>> cadastrarProduto(
-      @Valid @RequestBody ProdutoDTO produtoDTO) {
+      @Valid @RequestBody ProdutoDTO produtoDTO, @AuthenticationPrincipal Usuario usuarioLogado) {
     ProdutoResponseDTO produto = produtoService.cadastrarProduto(produtoDTO);
 
-    String userId = String.valueOf(SecurityUtils.getCurrentUserId());
+    String userId = String.valueOf(usuarioLogado.getId());
 
     auditService.logUserAction(
         userId,

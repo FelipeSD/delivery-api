@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 
 import com.deliverytech.delivery_api.dtos.ItemPedidoDTO;
 import com.deliverytech.delivery_api.dtos.PedidoDTO;
+import com.deliverytech.delivery_api.dtos.PedidoFiltroDTO;
 import com.deliverytech.delivery_api.dtos.PedidoResponseDTO;
 import com.deliverytech.delivery_api.enums.StatusPedido;
 
@@ -18,7 +19,7 @@ public interface PedidoService {
 
   Page<PedidoResponseDTO> buscarPedidosPorUsuario(Long usuarioId, Pageable pageable);
 
-  Page<PedidoResponseDTO> buscarMeusPedidos(Pageable pageable);
+  Page<PedidoResponseDTO> buscarMeusPedidos(PedidoFiltroDTO filtro, Pageable pageable);
 
   Page<PedidoResponseDTO> buscarPedidosPorRestaurante(Long restauranteId, Pageable pageable);
 

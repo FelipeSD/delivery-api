@@ -4,6 +4,7 @@ import static com.deliverytech.delivery_api.matchers.ApiResponseMatchers.erro;
 import static com.deliverytech.delivery_api.matchers.ApiResponseMatchers.mensagem;
 import static com.deliverytech.delivery_api.matchers.ApiResponseMatchers.sucesso;
 import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -58,9 +59,16 @@ class PedidoControllerIT extends BaseIntegrationTest {
   private Produto produtoSalvo;
   private Pedido pedidoSalvo;
   private PedidoDTO pedidoDTO;
-  private String usuarioJwtToken;
+  private String clienteJwtToken;
   private String restauranteJwtToken;
   private String adminJwtToken;
+
+  // Constantes para valores esperados
+  private static final BigDecimal PRECO_UNITARIO = new BigDecimal("45.90");
+  private static final int QUANTIDADE = 2;
+  private static final BigDecimal TAXA_ENTREGA = new BigDecimal("8.50");
+  private static final BigDecimal SUBTOTAL_ESPERADO = new BigDecimal("91.80"); // 45.90 * 2
+  private static final BigDecimal VALOR_TOTAL_ESPERADO = new BigDecimal("100.30"); // 91.80 + 8.50
 
   @BeforeEach
   void setUp() throws Exception {
@@ -74,17 +82,21 @@ class PedidoControllerIT extends BaseIntegrationTest {
     restauranteSalvo = restauranteRepository.save(EntityFactory.criarRestaurante());
 
     // 3. Criar usuário do restaurante (após restaurante existir)
-    var usuarioRestaurante = usuarioRepository.save(
-        usuarioFactory.criarUsuarioRestaurante(restauranteSalvo));
+    var usuarioRestaurante = usuarioRepository.save(usuarioFactory.criarUsuarioRestaurante(restauranteSalvo));
+
+    assertEquals(restauranteSalvo.getId(), usuarioRestaurante.getRestaurante().getId(), "Usuário do restaurante não está correto");
 
     // 4. Criar produto (após restaurante existir)
     produtoSalvo = produtoRepository.save(EntityFactory.criarProduto(restauranteSalvo));
+
+    // IMPORTANTE: Validar que o produto foi salvo com o preço correto
+    assertEquals(PRECO_UNITARIO, produtoSalvo.getPreco(), "Preço do produto deve ser R$ 45.90");
 
     // 5. AGORA SIM: Criar pedido (usuário e restaurante já existem)
     pedidoSalvo = pedidoRepository.save(EntityFactory.criarPedido(usuarioSalvo, restauranteSalvo));
 
     // 6. Gerar tokens JWT
-    usuarioJwtToken = loginAndGetToken(usuarioCliente.getEmail(), "123456");
+    clienteJwtToken = loginAndGetToken(usuarioCliente.getEmail(), "123456");
     restauranteJwtToken = loginAndGetToken(usuarioRestaurante.getEmail(), "123456");
     adminJwtToken = loginAndGetToken(usuarioAdmin.getEmail(), "123456");
 
@@ -94,16 +106,16 @@ class PedidoControllerIT extends BaseIntegrationTest {
 
   @Test
   void deveCriarPedidoComSucesso() throws Exception {
-    postJson("/api/pedidos", usuarioJwtToken, pedidoDTO)
+    postJson("/api/pedidos", clienteJwtToken, pedidoDTO)
         .andDo(print())
         .andExpect(status().isCreated())
         .andExpect(sucesso())
         .andExpect(jsonPath("$.data.usuario.id").value(usuarioSalvo.getId()))
         .andExpect(jsonPath("$.data.restaurante.id").value(restauranteSalvo.getId()))
         .andExpect(jsonPath("$.data.status").value("PENDENTE"))
-        .andExpect(jsonPath("$.data.subtotal").value(91.80))
-        .andExpect(jsonPath("$.data.taxaEntrega").value(8.50))
-        .andExpect(jsonPath("$.data.valorTotal").value(100.30))
+        .andExpect(jsonPath("$.data.subtotal").value(SUBTOTAL_ESPERADO.doubleValue()))
+        .andExpect(jsonPath("$.data.taxaEntrega").value(TAXA_ENTREGA.doubleValue()))
+        .andExpect(jsonPath("$.data.valorTotal").value(VALOR_TOTAL_ESPERADO.doubleValue()))
         .andExpect(jsonPath("$.data.itens", hasSize(1)))
         .andExpect(mensagem("Pedido criado com sucesso"));
   }
@@ -112,7 +124,7 @@ class PedidoControllerIT extends BaseIntegrationTest {
   void deveRejeitarPedidoComDadosInvalidos() throws Exception {
     PedidoDTO dtoInvalido = EntityFactory.criarPedidoDTOInvalido();
 
-    postJson("/api/pedidos", usuarioJwtToken, dtoInvalido)
+    postJson("/api/pedidos", clienteJwtToken, dtoInvalido)
         .andDo(print())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.success").value(false))
@@ -123,7 +135,7 @@ class PedidoControllerIT extends BaseIntegrationTest {
   void deveRejeitarPedidoComUsuarioInexistente() throws Exception {
     pedidoDTO.setUsuarioId(999L);
 
-    postJson("/api/pedidos", usuarioJwtToken, pedidoDTO)
+    postJson("/api/pedidos", clienteJwtToken, pedidoDTO)
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.success").value(false))
         .andExpect(erro("ENTITY_NOT_FOUND"));
@@ -133,7 +145,7 @@ class PedidoControllerIT extends BaseIntegrationTest {
   void deveRejeitarPedidoComRestauranteInexistente() throws Exception {
     pedidoDTO.setRestauranteId(999L);
 
-    postJson("/api/pedidos", usuarioJwtToken, pedidoDTO)
+    postJson("/api/pedidos", clienteJwtToken, pedidoDTO)
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.success").value(false))
         .andExpect(erro("ENTITY_NOT_FOUND"));
@@ -143,7 +155,7 @@ class PedidoControllerIT extends BaseIntegrationTest {
   void deveRejeitarPedidoComProdutoInexistente() throws Exception {
     pedidoDTO.getItens().get(0).setProdutoId(999L);
 
-    postJson("/api/pedidos", usuarioJwtToken, pedidoDTO)
+    postJson("/api/pedidos", clienteJwtToken, pedidoDTO)
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.success").value(false))
         .andExpect(erro("ENTITY_NOT_FOUND"));
@@ -151,19 +163,19 @@ class PedidoControllerIT extends BaseIntegrationTest {
 
   @Test
   void deveBuscarPedidoPorId() throws Exception {
-    getJson("/api/pedidos/{id}", usuarioJwtToken, pedidoSalvo.getId())
+    getJson("/api/pedidos/{id}", clienteJwtToken, pedidoSalvo.getId())
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(sucesso())
         .andExpect(jsonPath("$.data.id").value(pedidoSalvo.getId()))
         .andExpect(jsonPath("$.data.status").value("PENDENTE"))
-        .andExpect(jsonPath("$.data.valorTotal").value(100.30))
+        .andExpect(jsonPath("$.data.valorTotal").value(VALOR_TOTAL_ESPERADO.doubleValue()))
         .andExpect(mensagem("Pedido retornado com sucesso"));
   }
 
   @Test
   void deveRetornar404ParaPedidoInexistente() throws Exception {
-    getJson("/api/pedidos/{id}", usuarioJwtToken, 999L)
+    getJson("/api/pedidos/{id}", clienteJwtToken, 999L)
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.success").value(false))
         .andExpect(erro("ENTITY_NOT_FOUND"));
@@ -175,13 +187,13 @@ class PedidoControllerIT extends BaseIntegrationTest {
     params.put("page", "0");
     params.put("size", "10");
 
-    getJson("/api/pedidos/usuario/{usuarioId}", usuarioJwtToken, params, usuarioSalvo.getId())
+    getJson("/api/pedidos/usuario/{usuarioId}", adminJwtToken, params, usuarioSalvo.getId())
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(sucesso())
         .andExpect(jsonPath("$.content").isArray())
         .andExpect(jsonPath("$.content", hasSize(1)))
-        .andExpect(jsonPath("$.content[0].usuarioId").value(usuarioSalvo.getId()))
+        .andExpect(jsonPath("$.content[0].usuario.id").value(usuarioSalvo.getId()))
         .andExpect(jsonPath("$.page.number").value(0))
         .andExpect(jsonPath("$.page.size").value(10))
         .andExpect(jsonPath("$.page.totalElements").value(1));
@@ -199,7 +211,7 @@ class PedidoControllerIT extends BaseIntegrationTest {
         .andExpect(sucesso())
         .andExpect(jsonPath("$.content").isArray())
         .andExpect(jsonPath("$.content", hasSize(1)))
-        .andExpect(jsonPath("$.content[0].restauranteId").value(restauranteSalvo.getId()))
+        .andExpect(jsonPath("$.content[0].restaurante.id").value(restauranteSalvo.getId()))
         .andExpect(jsonPath("$.page.totalElements").value(1));
   }
 
@@ -210,7 +222,7 @@ class PedidoControllerIT extends BaseIntegrationTest {
     params.put("page", "0");
     params.put("size", "10");
 
-    getJson("/api/pedidos", adminJwtToken, params)
+    getJson("/api/pedidos/meus", clienteJwtToken, params)
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(sucesso())
@@ -266,12 +278,12 @@ class PedidoControllerIT extends BaseIntegrationTest {
 
   @Test
   void deveCancelarPedidoComSucesso() throws Exception {
-    deleteJson("/api/pedidos/{id}", usuarioJwtToken, pedidoSalvo.getId())
+    deleteJson("/api/pedidos/{id}", clienteJwtToken, pedidoSalvo.getId())
         .andDo(print())
         .andExpect(status().isNoContent());
 
     // Verificar se o pedido foi realmente cancelado
-    getJson("/api/pedidos/{id}", usuarioJwtToken, pedidoSalvo.getId())
+    getJson("/api/pedidos/{id}", clienteJwtToken, pedidoSalvo.getId())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data.status").value("CANCELADO"));
   }
@@ -282,7 +294,7 @@ class PedidoControllerIT extends BaseIntegrationTest {
     pedidoSalvo.setStatus(StatusPedido.SAIU_PARA_ENTREGA);
     pedidoRepository.save(pedidoSalvo);
 
-    deleteJson("/api/pedidos/{id}", usuarioJwtToken, pedidoSalvo.getId())
+    deleteJson("/api/pedidos/{id}", clienteJwtToken, pedidoSalvo.getId())
         .andDo(print())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.success").value(false))
@@ -295,7 +307,7 @@ class PedidoControllerIT extends BaseIntegrationTest {
     pedidoSalvo.setStatus(StatusPedido.CANCELADO);
     pedidoRepository.save(pedidoSalvo);
 
-    deleteJson("/api/pedidos/{id}", usuarioJwtToken, pedidoSalvo.getId())
+    deleteJson("/api/pedidos/{id}", clienteJwtToken, pedidoSalvo.getId())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.success").value(false))
         .andExpect(erro("BUSINESS_ERROR"));
@@ -304,13 +316,13 @@ class PedidoControllerIT extends BaseIntegrationTest {
   @Test
   void deveCalcularTotalDoPedido() throws Exception {
     List<ItemPedidoDTO> itens = new ArrayList<>();
-    itens.add(EntityFactory.criarItemPedidoDTO(produtoSalvo.getId(), 2));
+    itens.add(EntityFactory.criarItemPedidoDTO(produtoSalvo.getId(), QUANTIDADE));
 
-    postJson("/api/pedidos/calcular", usuarioJwtToken, itens)
+    postJson("/api/pedidos/calcular", clienteJwtToken, itens)
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(sucesso())
-        .andExpect(jsonPath("$.data").value(91.80)) // 2 * 45.90
+        .andExpect(jsonPath("$.data").value(SUBTOTAL_ESPERADO.doubleValue())) // 2 * 45.90
         .andExpect(mensagem("Total do pedido calculado com sucesso"));
   }
 
@@ -329,7 +341,7 @@ class PedidoControllerIT extends BaseIntegrationTest {
     itens.add(EntityFactory.criarItemPedidoDTO(produtoSalvo.getId(), 2)); // 91.80
     itens.add(EntityFactory.criarItemPedidoDTO(produto2.getId(), 1)); // 39.90
 
-    postJson("/api/pedidos/calcular", usuarioJwtToken, itens)
+    postJson("/api/pedidos/calcular", clienteJwtToken, itens)
         .andExpect(status().isOk())
         .andExpect(sucesso())
         .andExpect(jsonPath("$.data").value(131.70)); // 91.80 + 39.90
@@ -340,7 +352,7 @@ class PedidoControllerIT extends BaseIntegrationTest {
     List<ItemPedidoDTO> itens = new ArrayList<>();
     itens.add(EntityFactory.criarItemPedidoDTO(999L, 2));
 
-    postJson("/api/pedidos/calcular", usuarioJwtToken, itens)
+    postJson("/api/pedidos/calcular", clienteJwtToken, itens)
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.success").value(false))
         .andExpect(erro("ENTITY_NOT_FOUND"));
@@ -352,7 +364,7 @@ class PedidoControllerIT extends BaseIntegrationTest {
     usuarioSalvo.setAtivo(false);
     usuarioRepository.save(usuarioSalvo);
 
-    postJson("/api/pedidos", usuarioJwtToken, pedidoDTO)
+    postJson("/api/pedidos", clienteJwtToken, pedidoDTO)
         .andDo(print())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.success").value(false))
@@ -365,7 +377,7 @@ class PedidoControllerIT extends BaseIntegrationTest {
     restauranteSalvo.setAtivo(false);
     restauranteRepository.save(restauranteSalvo);
 
-    postJson("/api/pedidos", usuarioJwtToken, pedidoDTO)
+    postJson("/api/pedidos", clienteJwtToken, pedidoDTO)
         .andDo(print())
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.success").value(false))
@@ -378,7 +390,7 @@ class PedidoControllerIT extends BaseIntegrationTest {
     produtoSalvo.setDisponivel(false);
     produtoRepository.save(produtoSalvo);
 
-    postJson("/api/pedidos", usuarioJwtToken, pedidoDTO)
+    postJson("/api/pedidos", clienteJwtToken, pedidoDTO)
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.success").value(false))
         .andExpect(erro("BUSINESS_ERROR"));
@@ -399,7 +411,7 @@ class PedidoControllerIT extends BaseIntegrationTest {
     params.put("page", "0");
     params.put("size", "10");
 
-    getJson("/api/pedidos/usuario/{usuarioId}", usuarioJwtToken, params, usuarioSalvo.getId())
+    getJson("/api/pedidos/usuario/{usuarioId}", adminJwtToken, params, usuarioSalvo.getId())
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(sucesso())

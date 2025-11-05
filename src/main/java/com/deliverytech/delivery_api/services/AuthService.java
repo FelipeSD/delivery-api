@@ -1,7 +1,6 @@
 package com.deliverytech.delivery_api.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,8 +21,8 @@ public class AuthService implements UserDetailsService {
   private PasswordEncoder passwordEncoder;
 
   @Override
-  public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-    return usuarioRepository.findByEmailAndAtivo(email, true)
+  public Usuario loadUserByUsername(String email) throws UsernameNotFoundException {
+    return usuarioRepository.findByEmail(email)
         .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + email));
   }
 
