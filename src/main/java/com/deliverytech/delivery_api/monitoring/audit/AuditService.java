@@ -17,7 +17,7 @@ public class AuditService {
   private static final Logger auditLogger = LoggerFactory.getLogger("AUDIT");
   private final ObjectMapper objectMapper = new ObjectMapper();
 
-  public void logUserAction(String userId, String action, String resource, Object details) {
+  public void logUserAction(Long userId, String action, String resource, Object details) {
     try {
       Map<String, Object> auditEvent = new HashMap<>();
       auditEvent.put("timestamp", LocalDateTime.now().toString());

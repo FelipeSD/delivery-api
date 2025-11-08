@@ -5,7 +5,6 @@ import java.util.Arrays;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Profile;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
@@ -22,7 +21,7 @@ import com.deliverytech.delivery_api.repositories.RestauranteRepository;
 import com.deliverytech.delivery_api.repositories.UsuarioRepository;
 
 @Component
-@Profile({ "dev" })
+// @Profile({ "dev" })
 public class DataLoader implements CommandLineRunner {
   @Autowired
   private RestauranteRepository restauranteRepository;
@@ -44,8 +43,8 @@ public class DataLoader implements CommandLineRunner {
     // Inserir dados de teste
     inserirRestaurantes();
     inserirProdutos();
-    inserirPedidos();
     inserirUsuarios();
+    inserirPedidos();
     // Executar testes das consultas
     testarConsultas();
     System.out.println("=== CARGA DE DADOS CONCLUÍDA ===");
@@ -87,22 +86,26 @@ public class DataLoader implements CommandLineRunner {
 
   private void inserirRestaurantes() {
     System.out.println("--- Inserindo Restaurantes ---");
-    Restaurante restaurante1 = new Restaurante();
-    restaurante1.setNome("Pizza Express");
-    restaurante1.setCategoria("Italiana");
-    restaurante1.setEndereco("Av. Principal, 100");
-    restaurante1.setTelefone("1133333333");
-    restaurante1.setTaxaEntrega(new BigDecimal("3.50"));
-    restaurante1.setAtivo(true);
-    Restaurante restaurante2 = new Restaurante();
-    restaurante2.setNome("Burger King");
-    restaurante2.setCategoria("Fast Food");
-    restaurante2.setEndereco("Rua Central, 200");
-    restaurante2.setTelefone("1144444444");
-    restaurante2.setTaxaEntrega(new BigDecimal("5.00"));
-    restaurante2.setAvaliacao(4.2);
-    restaurante2.setAtivo(true);
-    restauranteRepository.saveAll(Arrays.asList(restaurante1, restaurante2));
+    Restaurante pizzaExpress = new Restaurante();
+    pizzaExpress.setNome("Pizza Express");
+    pizzaExpress.setCategoria("Italiana");
+    pizzaExpress.setCnpj("000000000000000000");
+    pizzaExpress.setEmail("pizzaexpress@pizzaria.com");
+    pizzaExpress.setEndereco("Av. Principal, 100");
+    pizzaExpress.setTelefone("1133333333");
+    pizzaExpress.setTaxaEntrega(new BigDecimal("3.50"));
+    pizzaExpress.setAtivo(true);
+    Restaurante burgerKing = new Restaurante();
+    burgerKing.setNome("Burger King");
+    burgerKing.setCategoria("Fast Food");
+    burgerKing.setCnpj("111111111111111111");
+    burgerKing.setEmail("burgerking@rest.com");
+    burgerKing.setEndereco("Rua Central, 200");
+    burgerKing.setTelefone("1144444444");
+    burgerKing.setTaxaEntrega(new BigDecimal("5.00"));
+    burgerKing.setAvaliacao(4.2);
+    burgerKing.setAtivo(true);
+    restauranteRepository.saveAll(Arrays.asList(pizzaExpress, burgerKing));
     var quantidadeRestaurantes = restauranteRepository.count();
     System.out.println("✓ " + quantidadeRestaurantes + " restaurantes inseridos");
   }

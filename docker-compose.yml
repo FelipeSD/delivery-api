@@ -1,0 +1,82 @@
+services:
+  app:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: delivery-api
+    ports:
+      - "8080:8080"
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    environment:
+      # Database
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/delivery
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: userpass
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      
+      # Redis - IMPORTANTE: usar nome do serviço
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      
+      # Spring Profile
+      SPRING_PROFILES_ACTIVE: docker
+      
+      # JWT
+      JWT_SECRET: mySecretKey123456789012345678901234567890123456789012345678901234567890
+      JWT_EXPIRATION: 86400000
+      
+      # Logging para debug
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_DATA_REDIS: DEBUG
+      LOGGING_LEVEL_IO_LETTUCE: DEBUG
+    restart: unless-stopped
+    networks:
+      - delivery-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  db:
+    image: postgres:16-alpine
+    container_name: delivery-db
+    environment:
+      POSTGRES_DB: delivery
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: userpass
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - delivery-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d delivery"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: delivery-redis
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - delivery-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+networks:
+  delivery-network:
+    driver: bridge
+    name: delivery-network

@@ -1,0 +1,226 @@
+# ==============================
+# 🌐 CONFIGURAÇÃO DO SERVIDOR
+# ==============================
+server:
+  port: 8080
+  shutdown: graceful
+
+# ==============================
+# 📘 SPRINGDOC / SWAGGER
+# ==============================
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operationsSorter: method
+    tagsSorter: alpha
+    disable-swagger-default-url: true
+
+# ==============================
+# 🔐 SEGURANÇA / JWT
+# ==============================
+jwt:
+  secret: ${JWT_SECRET:mySecretKey123456789012345678901234567890123456789012345678901234567890}
+  expiration: ${JWT_EXPIRATION:86400000}
+
+spring:
+  application:
+    name: delivery-api
+
+  security:
+    user:
+      name: ${ADMIN_USER:admin}
+      password: ${ADMIN_PASSWORD:admin}
+
+  devtools:
+    restart:
+      enabled: true
+
+  # ==============================
+  # 🧠 REDIS (CACHE APENAS)
+  # ==============================
+  redis:
+    host: ${SPRING_REDIS_HOST:localhost}
+    port: ${SPRING_REDIS_PORT:6379}
+    timeout: 10s
+    connect-timeout: 10s
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 2
+        max-wait: -1ms
+
+  # DESABILITA REPOSITÓRIOS REDIS (IMPORTANTE!)
+  data:
+    redis:
+      repositories:
+        enabled: false
+
+  # ==============================
+  # 🗃️ H2 (local)
+  # ==============================
+  datasource:
+    url: jdbc:h2:mem:delivery
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        web-allow-others: true
+
+  # ==============================
+  # ⚙️ JPA / HIBERNATE
+  # ==============================
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        connection:
+          isolation: 2
+        format_sql: true
+    show-sql: false
+    open-in-view: false
+
+  # ==============================
+  # 💾 CACHE CONFIG
+  # ==============================
+  cache:
+    type: redis
+    redis:
+      time-to-live: 1800000 # 30 minutos em ms
+      cache-null-values: false
+      use-key-prefix: true
+
+# ==============================
+# 🩺 ACTUATOR / OBSERVABILIDADE
+# ==============================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics, prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      show-components: when-authorized
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+    diskspace:
+      enabled: true
+      threshold: 10GB
+    db:
+      enabled: true
+    redis:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+  info:
+    env:
+      enabled: true
+    git:
+      mode: simple
+    build:
+      enabled: true
+
+info:
+  app:
+    name: Sistema de Delivery
+    description: API REST para sistema de delivery com observabilidade
+    version: 1.0.0
+    encoding: UTF-8
+    java:
+      version: 21
+
+logging:
+  level:
+    root: INFO
+    com.deliverytech.delivery_api: DEBUG
+    org.springframework.cache: INFO
+    org.springframework.data.redis: INFO
+
+# ==============================
+# 🐳 PERFIL DOCKER (DB + REDIS)
+# ==============================
+---
+spring:
+  config:
+    activate:
+      on-profile: docker
+
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://db:5432/delivery}
+    username: ${SPRING_DATASOURCE_USERNAME:user}
+    password: ${SPRING_DATASOURCE_PASSWORD:userpass}
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+
+  redis:
+    host: ${SPRING_REDIS_HOST:redis}
+    port: ${SPRING_REDIS_PORT:6379}
+    timeout: 10s
+    connect-timeout: 10s
+    lettuce:
+      pool:
+        max-active: 16
+        max-idle: 8
+        min-idle: 4
+
+  jpa:
+    hibernate:
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+        jdbc.batch_size: 1000
+        order_inserts: true
+        order_updates: true
+        generate_statistics: false
+    show-sql: false
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 1800000
+      cache-null-values: false
+      use-key-prefix: true
+
+management:
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+
+logging:
+  level:
+    root: INFO
+    com.deliverytech.delivery_api: INFO
+    org.springframework.cache: DEBUG
+    org.springframework.data.redis: DEBUG
+    org.hibernate.SQL: INFO

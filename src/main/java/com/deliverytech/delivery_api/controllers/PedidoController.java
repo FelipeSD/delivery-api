@@ -3,6 +3,7 @@ package com.deliverytech.delivery_api.controllers;
 import java.math.BigDecimal;
 import java.util.List;
 
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -83,7 +84,7 @@ public class PedidoController {
   @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<PagedResponseWrapper<PedidoResponseDTO>> buscarPorUsuario(
       @PathVariable Long usuarioId,
-      @PageableDefault(size = 20) Pageable pageable) {
+      @ParameterObject @PageableDefault(size = 20) Pageable pageable) {
     Page<PedidoResponseDTO> pedidos = pedidoService.buscarPedidosPorUsuario(usuarioId, pageable);
     PagedResponseWrapper<PedidoResponseDTO> response = new PagedResponseWrapper<>(true, pedidos);
     return ResponseEntity.ok(response);
@@ -97,8 +98,8 @@ public class PedidoController {
   @GetMapping("/meus")
   @PreAuthorize("hasRole('CLIENTE')")
   public ResponseEntity<PagedResponseWrapper<PedidoResponseDTO>> buscarMeusPedidos(
-      PedidoFiltroDTO filtro,
-      @PageableDefault(size = 20) Pageable pageable) {
+      @ParameterObject PedidoFiltroDTO filtro,
+      @ParameterObject @PageableDefault(size = 20) Pageable pageable) {
 
     Page<PedidoResponseDTO> pedidos = pedidoService.buscarMeusPedidos(filtro, pageable);
     PagedResponseWrapper<PedidoResponseDTO> response = new PagedResponseWrapper<>(true, pedidos);
@@ -114,7 +115,7 @@ public class PedidoController {
   @PreAuthorize("hasRole('ADMIN') or (hasRole('RESTAURANTE') and #restauranteId == principal.restaurante.id)")
   public ResponseEntity<PagedResponseWrapper<PedidoResponseDTO>> buscarPorRestaurante(
       @PathVariable Long restauranteId,
-      @PageableDefault(size = 20) Pageable pageable) {
+      @ParameterObject @PageableDefault(size = 20) Pageable pageable) {
     Page<PedidoResponseDTO> pedidos = pedidoService.buscarPedidosPorRestaurante(restauranteId, pageable);
     PagedResponseWrapper<PedidoResponseDTO> response = new PagedResponseWrapper<>(true, pedidos);
     return ResponseEntity.ok(response);

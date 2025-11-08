@@ -8,7 +8,6 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -84,10 +83,7 @@ public class RestauranteServiceImpl implements RestauranteService {
   @Transactional(readOnly = true)
   public Page<RestauranteResponseDTO> listarDisponiveis(Pageable pageable) {
     Page<Restaurante> restaurantes = restauranteRepository.findByAtivoTrue(pageable);
-    return restaurantes.stream()
-        .map(this::converterParaResponseDTO)
-        .collect(Collectors.collectingAndThen(Collectors.toList(),
-            list -> new PageImpl<>(list, pageable, list.size())));
+    return restaurantes.map(this::converterParaResponseDTO);
   }
 
   @Override
@@ -99,10 +95,7 @@ public class RestauranteServiceImpl implements RestauranteService {
 
     Page<Restaurante> restaurantes = restauranteRepository.findByCategoriaAndAtivoTrue(categoria, pageable);
 
-    return restaurantes.stream()
-        .map(this::converterParaResponseDTO)
-        .collect(Collectors.collectingAndThen(Collectors.toList(),
-            list -> new PageImpl<>(list, pageable, list.size())));
+    return restaurantes.map(this::converterParaResponseDTO);
   }
 
   @Override
@@ -211,10 +204,7 @@ public class RestauranteServiceImpl implements RestauranteService {
     Page<Restaurante> restaurantes = restauranteRepository
         .findByNomeContainingIgnoreCaseAndAtivoTrue(nome, pageable);
 
-    return restaurantes.stream()
-        .map(this::converterParaResponseDTO)
-        .collect(Collectors.collectingAndThen(Collectors.toList(),
-            list -> new PageImpl<>(list, pageable, list.size())));
+    return restaurantes.map(this::converterParaResponseDTO);
   }
 
   @Override

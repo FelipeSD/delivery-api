@@ -28,6 +28,7 @@ public class AlertService {
 
   @Scheduled(fixedRate = 30000) // A cada 30 segundos
   public void verificarAlertas() {
+    logger.debug("VERIFICANDO ALERTAS");
     verificarErrorRate();
     verificarResponseTime();
     verificarRecursosSistema();

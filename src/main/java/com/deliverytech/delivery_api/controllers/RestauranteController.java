@@ -1,5 +1,6 @@
 package com.deliverytech.delivery_api.controllers;
 
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -75,8 +76,8 @@ public class RestauranteController {
   @Operation(summary = "Buscar restaurante com filtros", description = "Filtra restaurante por nome")
   @GetMapping("/buscar")
   public ResponseEntity<PagedResponseWrapper<RestauranteResponseDTO>> buscarProdutos(
-      RestauranteFiltroDTO filtro,
-      @PageableDefault(size = 20) Pageable pageable) {
+      @ParameterObject RestauranteFiltroDTO filtro,
+      @ParameterObject @PageableDefault(size = 20) Pageable pageable) {
 
     Page<RestauranteResponseDTO> produtos = restauranteService.buscarPorNome(filtro.getNome(), pageable);
     PagedResponseWrapper<RestauranteResponseDTO> response = new PagedResponseWrapper<>(true, produtos);
@@ -87,7 +88,7 @@ public class RestauranteController {
   @Operation(summary = "Listar restaurantes disponíveis", description = "Retorna todos os restaurantes que estão disponíveis para receber pedidos")
   @GetMapping
   public ResponseEntity<PagedResponseWrapper<RestauranteResponseDTO>> listarDisponiveis(
-      @PageableDefault(size = 20) Pageable pageable) {
+      @ParameterObject @PageableDefault(size = 20) Pageable pageable) {
     Page<RestauranteResponseDTO> restaurantes = restauranteService.listarDisponiveis(pageable);
     PagedResponseWrapper<RestauranteResponseDTO> response = new PagedResponseWrapper<>(true, restaurantes);
     return ResponseEntity.ok(response);
@@ -97,7 +98,7 @@ public class RestauranteController {
   @Operation(summary = "Listar restaurantes por categoria", description = "Retorna todos os restaurantes que pertencem a uma categoria específica")
   @GetMapping("/categoria/{categoria}")
   public ResponseEntity<PagedResponseWrapper<RestauranteResponseDTO>> listarPorCategoria(@PathVariable String categoria,
-      @PageableDefault(size = 20) Pageable pageable) {
+      @ParameterObject @PageableDefault(size = 20) Pageable pageable) {
     Page<RestauranteResponseDTO> restaurantes = restauranteService.listarPorCategoria(categoria, pageable);
     PagedResponseWrapper<RestauranteResponseDTO> response = new PagedResponseWrapper<>(true, restaurantes);
     return ResponseEntity.ok(response);

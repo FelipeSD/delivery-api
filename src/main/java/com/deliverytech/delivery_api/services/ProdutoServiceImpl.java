@@ -1,13 +1,14 @@
 package com.deliverytech.delivery_api.services;
 
 import java.math.BigDecimal;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,14 +22,20 @@ import com.deliverytech.delivery_api.exceptions.ConflictException;
 import com.deliverytech.delivery_api.exceptions.EntityNotFoundException;
 import com.deliverytech.delivery_api.exceptions.InactiveEntityException;
 import com.deliverytech.delivery_api.exceptions.ValidationException;
+import com.deliverytech.delivery_api.monitoring.audit.AuditService;
 import com.deliverytech.delivery_api.repositories.ProdutoRepository;
 import com.deliverytech.delivery_api.repositories.RestauranteRepository;
 import com.deliverytech.delivery_api.security.SecurityUtils;
 
-@Service("produtoService")
-@Transactional
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Primary
+@Transactional
+@Service("produtoService")
 public class ProdutoServiceImpl implements ProdutoService {
+  @Autowired
+  private AuditService auditService;
 
   @Autowired
   private ProdutoRepository produtoRepository;
@@ -42,6 +49,9 @@ public class ProdutoServiceImpl implements ProdutoService {
   @Override
   @Transactional
   public ProdutoResponseDTO cadastrarProduto(ProdutoDTO produtoDTO) {
+    log.info("Iniciando a criação de produto {} para o restaurante ID: {}", produtoDTO.getNome(),
+        produtoDTO.getRestauranteId());
+
     // 1. Validar restaurante existe e está ativo
     Restaurante restaurante = restauranteRepository.findById(produtoDTO.getRestauranteId())
         .orElseThrow(() -> new EntityNotFoundException("Restaurante", produtoDTO.getRestauranteId()));
@@ -75,12 +85,22 @@ public class ProdutoServiceImpl implements ProdutoService {
 
     Produto produtoSalvo = produtoRepository.save(produto);
 
+    auditService.logUserAction(
+        SecurityUtils.getCurrentUserId(),
+        "CRIAR_PRODUTO",
+        "Produto",
+        Map.of("produtoId", produto.getId(), "nome", produto.getNome()));
+
+    log.info("Produto criado com sucesso. ID: {} | Nome: {} | Preço: R$ {}", produtoSalvo.getId(),
+        produtoSalvo.getNome(), produtoSalvo.getPreco());
+
     // 5. Retornar DTO de resposta
     return converterParaResponseDTO(produtoSalvo);
   }
 
   @Override
   @Transactional(readOnly = true)
+  @Cacheable(value = "produtos", key = "#id")
   public ProdutoResponseDTO buscarProdutoPorId(Long id) {
     Produto produto = produtoRepository.findById(id)
         .orElseThrow(() -> new EntityNotFoundException("Produto", id));
@@ -98,10 +118,7 @@ public class ProdutoServiceImpl implements ProdutoService {
 
     Page<Produto> produtos = produtoRepository.findByRestauranteIdAndDisponivelTrue(restauranteId, pageable);
 
-    return produtos.stream()
-        .map(this::converterParaResponseDTO)
-        .collect(Collectors.collectingAndThen(Collectors.toList(),
-            list -> new PageImpl<>(list, pageable, list.size())));
+    return produtos.map(this::converterParaResponseDTO);
   }
 
   @Override
@@ -113,10 +130,7 @@ public class ProdutoServiceImpl implements ProdutoService {
 
     Page<Produto> produtos = produtoRepository.findByCategoriaAndDisponivelTrue(categoria, pageable);
 
-    return produtos.stream()
-        .map(this::converterParaResponseDTO)
-        .collect(Collectors.collectingAndThen(Collectors.toList(),
-            list -> new PageImpl<>(list, pageable, list.size())));
+    return produtos.map(this::converterParaResponseDTO);
   }
 
   public Page<ProdutoResponseDTO> buscarComFiltros(ProdutoFiltroDTO filtro, Pageable pageable) {
@@ -134,6 +148,7 @@ public class ProdutoServiceImpl implements ProdutoService {
 
   @Override
   @Transactional
+  @CacheEvict(value = "produtos", key = "#id")
   public ProdutoResponseDTO atualizarProduto(Long id, ProdutoDTO produtoDTO) {
     // 1. Buscar produto existente
     Produto produto = produtoRepository.findById(id)
@@ -172,6 +187,7 @@ public class ProdutoServiceImpl implements ProdutoService {
 
   @Override
   @Transactional
+  @CacheEvict(value = "produtos", key = "#id")
   public ProdutoResponseDTO alterarDisponibilidade(Long id, boolean disponivel) {
     Produto produto = produtoRepository.findById(id)
         .orElseThrow(() -> new EntityNotFoundException("Produto", id));
@@ -200,10 +216,23 @@ public class ProdutoServiceImpl implements ProdutoService {
 
     Page<Produto> produtos = produtoRepository.findByPrecoBetweenAndDisponivelTrue(precoMin, precoMax, pageable);
 
-    return produtos.stream()
-        .map(this::converterParaResponseDTO)
-        .collect(Collectors.collectingAndThen(Collectors.toList(),
-            list -> new PageImpl<>(list, pageable, list.size())));
+    return produtos.map(this::converterParaResponseDTO);
+  }
+
+  @Override
+  @CacheEvict(value = "produtos", key = "#id")
+  public void deletarProduto(Long id) {
+    Produto produto = produtoRepository.findById(id)
+        .orElseThrow(() -> new EntityNotFoundException("Produto", id));
+    produtoRepository.delete(produto);
+  }
+
+  @Override
+  public boolean isOwner(Long produtoId) {
+    Long usuarioId = SecurityUtils.getCurrentUserId();
+    if (usuarioId == null)
+      return false;
+    return produtoRepository.isOwner(produtoId, usuarioId);
   }
 
   // ==================== MÉTODOS AUXILIARES ====================
@@ -232,20 +261,5 @@ public class ProdutoServiceImpl implements ProdutoService {
     }
 
     return dto;
-  }
-
-  @Override
-  public void deletarProduto(Long id) {
-    Produto produto = produtoRepository.findById(id)
-        .orElseThrow(() -> new EntityNotFoundException("Produto", id));
-    produtoRepository.delete(produto);
-  }
-
-  @Override
-  public boolean isOwner(Long produtoId) {
-    Long usuarioId = SecurityUtils.getCurrentUserId();
-    if (usuarioId == null)
-      return false;
-    return produtoRepository.isOwner(produtoId, usuarioId);
   }
 }
