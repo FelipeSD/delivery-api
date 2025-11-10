@@ -1,0 +1,146 @@
+# ==============================
+# 🐳 CONFIGURAÇÃO DOCKER (PROD)
+# ==============================
+
+spring:
+  application:
+    name: delivery-api
+  profiles:
+    active: docker
+
+  # ==============================
+  # 🗃️ BANCO DE DADOS (PostgreSQL)
+  # ==============================
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://db:5432/delivery}
+    username: ${SPRING_DATASOURCE_USERNAME:user}
+    password: ${SPRING_DATASOURCE_PASSWORD:userpass}
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  # ==============================
+  # 🧠 REDIS (Cache e sessão)
+  # ==============================
+  redis:
+    host: ${SPRING_REDIS_HOST:redis}
+    port: ${SPRING_REDIS_PORT:6379}
+    timeout: 10s
+    connect-timeout: 10s
+    lettuce:
+      pool:
+        max-active: 16
+        max-idle: 8
+        min-idle: 4
+        max-wait: 5s
+  data:
+    redis:
+      repositories:
+        enabled: false
+
+  # ==============================
+  # ⚙️ JPA / HIBERNATE
+  # ==============================
+  jpa:
+    hibernate:
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+        jdbc.batch_size: 1000
+        order_inserts: true
+        order_updates: true
+    show-sql: false
+    open-in-view: false
+
+  # ==============================
+  # 💾 CACHE CONFIG
+  # ==============================
+  cache:
+    type: redis
+    redis:
+      time-to-live: 1800000 # 30 min
+      cache-null-values: false
+      use-key-prefix: true
+
+# ==============================
+# 🔐 JWT / SEGURANÇA
+# ==============================
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:86400000}
+
+# ==============================
+# 🩺 ACTUATOR / OBSERVABILIDADE
+# ==============================
+management:
+  server:
+    port: ${MANAGEMENT_PORT:${SERVER_PORT:8080}}
+  endpoints:
+    web:
+      base-path: /actuator
+      exposure:
+        include: health, info, metrics, prometheus, env
+  endpoint:
+    health:
+      show-details: when-authorized
+      show-components: when-authorized
+      roles: ADMIN
+      probes:
+        enabled: true
+    env:
+      show-values: never  # 🚫 Nunca mostra valores sensíveis
+      roles: ADMIN
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+  info:
+    git:
+      mode: simple
+    build:
+      enabled: true
+
+# ==============================
+# 📘 SWAGGER / OPENAPI
+# ==============================
+springdoc:
+  api-docs.path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: false # 🚫 Desativado em produção (ativar apenas em DEV)
+  show-actuator: false
+
+# ==============================
+# 🧠 HEALTH CHECK
+# ==============================
+server:
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+
+# ==============================
+# 🧾 INFO / METADADOS
+# ==============================
+info:
+  app:
+    name: Delivery API
+    description: API REST de Delivery em ambiente Docker
+    version: 1.0.0
+    environment: docker
+
+# ==============================
+# 🧰 LOGGING
+# ==============================
+logging:
+  level:
+    root: INFO
+    com.deliverytech.delivery_api: INFO
+    org.springframework.cache: INFO
+    org.springframework.data.redis: DEBUG
+    io.lettuce.core: DEBUG
+    org.hibernate.SQL: WARN

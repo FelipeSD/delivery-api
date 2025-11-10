@@ -1,0 +1,147 @@
+# ==============================
+# 🌐 CONFIGURAÇÃO DO SERVIDOR (DEV)
+# ==============================
+server:
+  port: 8080
+  shutdown: graceful
+
+spring:
+  application:
+    name: delivery-api
+
+  security:
+    user:
+      name: ${ADMIN_USER:admin}
+      password: ${ADMIN_PASSWORD:admin}
+
+  devtools:
+    restart:
+      enabled: true
+
+  # ==============================
+  # 🗃️ BANCO DE DADOS (H2)
+  # ==============================
+  datasource:
+    url: jdbc:h2:mem:delivery
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        web-allow-others: true
+
+  # ==============================
+  # 🧠 REDIS (LOCAL)
+  # ==============================
+  redis:
+    host: localhost
+    port: 6379
+    timeout: 10s
+    connect-timeout: 10s
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 2
+  data:
+    redis:
+      repositories:
+        enabled: false
+
+  # ==============================
+  # ⚙️ JPA / HIBERNATE
+  # ==============================
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        connection:
+          isolation: 2
+        format_sql: true
+    show-sql: false
+    open-in-view: false
+
+  # ==============================
+  # 🔐 JWT / SEGURANÇA
+  # ==============================
+jwt:
+  secret: mySecretKey123456789012345678901234567890123456789012345678901234567890
+  expiration: 86400000
+
+# ==============================
+# 📘 SWAGGER / OPENAPI
+# ==============================
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operationsSorter: method
+    tagsSorter: alpha
+    disable-swagger-default-url: true
+  show-actuator: true 
+
+# ==============================
+# 🩺 ACTUATOR / OBSERVABILIDADE
+# ==============================
+management:
+  server:
+    port: ${server.port}
+  endpoints:
+    web:
+      base-path: /actuator
+      exposure:
+        include: health, info, metrics, prometheus, env
+  endpoint:
+    health:
+      show-details: when-authorized
+      show-components: when-authorized
+      roles: ADMIN
+      probes:
+        enabled: true
+    env:
+      show-values: when-authorized
+      roles: ADMIN
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+  info:
+    env:
+      enabled: true
+    git:
+      mode: simple
+    build:
+      enabled: true
+
+info:
+  app:
+    name: Sistema de Delivery
+    description: API REST para sistema de delivery com observabilidade e JWT
+    version: 1.0.0
+    encoding: UTF-8
+    java:
+      version: 21
+
+# ==============================
+# 🧰 LOGGING
+# ==============================
+logging:
+  level:
+    root: INFO
+    com.deliverytech.delivery_api: DEBUG
+    org.springframework.security: INFO
+    org.springframework.boot.actuate: INFO
