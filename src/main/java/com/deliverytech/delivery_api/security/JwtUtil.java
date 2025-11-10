@@ -29,20 +29,23 @@ public class JwtUtil {
     return Keys.hmacShaKeyFor(secret.getBytes());
   }
 
-  public String generateToken(UserDetails userDetails) {
+  public String generateToken(Usuario usuario) {
     Map<String, Object> claims = new HashMap<>();
 
-    if (userDetails instanceof Usuario) {
-      Usuario usuario = (Usuario) userDetails;
-      claims.put("userId", usuario.getId());
-      claims.put("role", usuario.getRole().name());
-      claims.put("nome", usuario.getNome());
-      if (usuario.getRestaurante() != null) {
-        claims.put("restauranteId", usuario.getRestaurante().getId());
-      }
+    claims.put("userId", usuario.getId());
+    claims.put("role", usuario.getRole().name());
+    claims.put("nome", usuario.getNome());
+    if (usuario.getRestaurante() != null) {
+      claims.put("restauranteId", usuario.getRestaurante().getId());
     }
 
-    return createToken(claims, userDetails.getUsername());
+    return createToken(claims, usuario.getUsername());
+  }
+
+  public String generateRefreshToken(Usuario user) {
+    Map<String, Object> claims = new HashMap<>();
+    claims.put("userId", user.getId());
+    return createToken(claims, user.getEmail());
   }
 
   private String createToken(Map<String, Object> claims, String subject) {
@@ -99,5 +102,9 @@ public class JwtUtil {
   public Boolean validateToken(String token, UserDetails userDetails) {
     final String username = extractUsername(token);
     return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+  }
+
+  public Boolean validateRefreshToken(String token) {
+    return !isTokenExpired(token);
   }
 }

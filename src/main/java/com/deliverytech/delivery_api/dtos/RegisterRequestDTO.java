@@ -1,6 +1,8 @@
 package com.deliverytech.delivery_api.dtos;
 
 import com.deliverytech.delivery_api.enums.Role;
+import com.deliverytech.delivery_api.utils.LowercaseDeserializer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
@@ -17,6 +19,7 @@ public class RegisterRequestDTO {
 
   @NotBlank(message = "Email é obrigatório")
   @Email(message = "Email deve ter formato válido")
+  @JsonDeserialize(using = LowercaseDeserializer.class)
   private String email;
 
   @NotBlank(message = "Senha é obrigatória")

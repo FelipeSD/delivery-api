@@ -56,11 +56,11 @@
       <artifactId>spring-boot-starter-actuator</artifactId> 
     </dependency> 
  
-    <!-- Micrometer Prometheus --> 
-    <dependency> 
-      <groupId>io.micrometer</groupId> 
-      <artifactId>micrometer-registry-prometheus</artifactId> 
-    </dependency> 
+    <!-- Micrometer Prometheus (métricas HTTP, JPA, Redis, etc.) -->
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-registry-prometheus</artifactId>
+    </dependency>
 
     <!-- JWT -->
     <dependency>

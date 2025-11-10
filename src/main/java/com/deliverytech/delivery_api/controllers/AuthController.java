@@ -1,13 +1,17 @@
 package com.deliverytech.delivery_api.controllers;
 
+import java.time.Duration;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,7 +21,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.deliverytech.delivery_api.dtos.ApiResponseWrapper;
 import com.deliverytech.delivery_api.dtos.LoginRequestDTO;
-import com.deliverytech.delivery_api.dtos.LoginResponseDTO;
 import com.deliverytech.delivery_api.dtos.RegisterRequestDTO;
 import com.deliverytech.delivery_api.dtos.UsuarioResponseDTO;
 import com.deliverytech.delivery_api.entities.Usuario;
@@ -48,42 +51,73 @@ public class AuthController {
   @Value("${jwt.expiration}")
   private Long jwtExpiration;
 
-  @Operation(summary = "Login de usuário", description = "Autentica um usuário e retorna um token JWT")
+  @Operation(summary = "Login de usuário", description = "Autentica um usuário e retorna um token JWT de acesso e cookie de refresh token seguro")
   @ApiResponses(value = {
       @ApiResponse(responseCode = "200", description = "Login bem-sucedido"),
       @ApiResponse(responseCode = "401", description = "Credenciais inválidas")
   })
   @PostMapping("/login")
-  public ResponseEntity<ApiResponseWrapper<LoginResponseDTO>> login(@Valid @RequestBody LoginRequestDTO loginRequest) {
+  public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDTO loginRequest) {
     try {
-      // Autenticar usuário
+      // 1️⃣ Autentica o usuário
       authenticationManager.authenticate(
           new UsernamePasswordAuthenticationToken(
               loginRequest.getEmail(),
               loginRequest.getSenha()));
 
-      // Carregar detalhes do usuário
-      UserDetails userDetails = authService.loadUserByUsername(loginRequest.getEmail());
+      // 2️⃣ Carrega o usuário autenticado
+      Usuario userDetails = authService.loadUserByUsername(loginRequest.getEmail());
 
-      // Gerar token JWT
-      String token = jwtUtil.generateToken(userDetails);
+      // 3️⃣ Gera tokens
+      String accessToken = jwtUtil.generateToken(userDetails);
+      String refreshToken = jwtUtil.generateRefreshToken(userDetails);
 
-      // Criar resposta
-      Usuario usuario = (Usuario) userDetails;
-      UsuarioResponseDTO userResponse = new UsuarioResponseDTO(usuario);
-      LoginResponseDTO loginResponse = new LoginResponseDTO(token, jwtExpiration,
-          userResponse);
+      // 4️⃣ Cria cookie seguro para refresh token
+      ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
+          .httpOnly(true)
+          .secure(true)
+          .sameSite("Strict")
+          .path("/api/auth/refresh")
+          .maxAge(Duration.ofDays(7))
+          .build();
 
-      ApiResponseWrapper<LoginResponseDTO> response = new ApiResponseWrapper<>(true, loginResponse,
-          "Login bem-sucedido");
-      return ResponseEntity.ok(response);
+      return ResponseEntity.ok()
+          .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+          .body(accessToken);
+
     } catch (BadCredentialsException e) {
       return ResponseEntity.status(401)
-          .body(new ApiResponseWrapper<LoginResponseDTO>(false, null, "Credenciais inválidas"));
+          .body(new ApiResponseWrapper<>(false, null, "Credenciais inválidas"));
     } catch (Exception e) {
-      System.err.println("Erro ao autenticar usuário: " + e.getMessage());
       return ResponseEntity.status(500)
-          .body(new ApiResponseWrapper<LoginResponseDTO>(false, null, "Erro ao autenticar usuário"));
+          .body(new ApiResponseWrapper<>(false, null, "Erro ao autenticar usuário"));
+    }
+  }
+
+  @Operation(summary = "Refresh de token", description = "Gera um novo token JWT de acesso usando o refresh token do cookie seguro")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Novo token de acesso gerado com sucesso"),
+      @ApiResponse(responseCode = "401", description = "Refresh token inválido ou expirado")
+  })
+  @PostMapping("/refresh")
+  public ResponseEntity<?> refreshToken(@CookieValue("refresh_token") String refreshToken) {
+    try {
+      if (!jwtUtil.validateRefreshToken(refreshToken)) {
+        return ResponseEntity.status(401)
+            .body(new ApiResponseWrapper<>(false, null, "Refresh token inválido ou expirado"));
+      }
+
+      String email = jwtUtil.extractUsername(refreshToken);
+
+      Usuario usuario = authService.loadUserByUsername(email);
+
+      String newAccessToken = jwtUtil.generateToken(usuario);
+
+      return ResponseEntity.ok(newAccessToken);
+
+    } catch (Exception e) {
+      return ResponseEntity.status(500)
+          .body(new ApiResponseWrapper<>(false, null, "Erro ao gerar novo token de acesso"));
     }
   }
 
@@ -123,7 +157,8 @@ public class AuthController {
       @ApiResponse(responseCode = "401", description = "Usuário não autenticado")
   })
   @GetMapping("/me")
-  public ResponseEntity<ApiResponseWrapper<UsuarioResponseDTO>> getCurrentUser(@AuthenticationPrincipal Usuario usuarioLogado) {
+  public ResponseEntity<ApiResponseWrapper<UsuarioResponseDTO>> getCurrentUser(
+      @AuthenticationPrincipal Usuario usuarioLogado) {
     try {
       UsuarioResponseDTO userResponse = new UsuarioResponseDTO(usuarioLogado);
       ApiResponseWrapper<UsuarioResponseDTO> response = new ApiResponseWrapper<>(true, userResponse,

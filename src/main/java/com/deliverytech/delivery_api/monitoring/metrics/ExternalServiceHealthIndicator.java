@@ -25,7 +25,7 @@ public class ExternalServiceHealthIndicator implements HealthIndicator {
                 .build(); 
  
         } catch (Exception e) { 
-            return Health.down() 
+            return Health.status("WARN")
                 .withDetail("service", "Payment Gateway") 
                 .withDetail("error", e.getMessage()) 
                 .withDetail("status", "Indisponível") 

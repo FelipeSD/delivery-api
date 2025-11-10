@@ -17,6 +17,7 @@ springdoc:
     operationsSorter: method
     tagsSorter: alpha
     disable-swagger-default-url: true
+  show-actuator: true   # 👈 habilita visualização do actuator no Swagger
 
 # ==============================
 # 🔐 SEGURANÇA / JWT
@@ -53,7 +54,6 @@ spring:
         min-idle: 2
         max-wait: -1ms
 
-  # DESABILITA REPOSITÓRIOS REDIS (IMPORTANTE!)
   data:
     redis:
       repositories:
@@ -102,7 +102,7 @@ spring:
   cache:
     type: redis
     redis:
-      time-to-live: 1800000 # 30 minutos em ms
+      time-to-live: 1800000 # 30 minutos
       cache-null-values: false
       use-key-prefix: true
 
@@ -110,29 +110,20 @@ spring:
 # 🩺 ACTUATOR / OBSERVABILIDADE
 # ==============================
 management:
+  server:
+    port: ${server.port}
   endpoints:
     web:
-      exposure:
-        include: health, info, metrics, prometheus
       base-path: /actuator
+      exposure:
+        include: health, info, metrics, prometheus, env
   endpoint:
     health:
       show-details: when-authorized
       show-components: when-authorized
+      roles: ADMIN
       probes:
         enabled: true
-  health:
-    livenessstate:
-      enabled: true
-    readinessstate:
-      enabled: true
-    diskspace:
-      enabled: true
-      threshold: 10GB
-    db:
-      enabled: true
-    redis:
-      enabled: true
   metrics:
     export:
       prometheus:
@@ -148,7 +139,7 @@ management:
 info:
   app:
     name: Sistema de Delivery
-    description: API REST para sistema de delivery com observabilidade
+    description: API REST para sistema de delivery com observabilidade e JWT
     version: 1.0.0
     encoding: UTF-8
     java:
@@ -160,6 +151,7 @@ logging:
     com.deliverytech.delivery_api: DEBUG
     org.springframework.cache: INFO
     org.springframework.data.redis: INFO
+    org.springframework.boot.actuate: INFO
 
 # ==============================
 # 🐳 PERFIL DOCKER (DB + REDIS)
@@ -201,7 +193,6 @@ spring:
         jdbc.batch_size: 1000
         order_inserts: true
         order_updates: true
-        generate_statistics: false
     show-sql: false
 
   cache:
@@ -210,12 +201,6 @@ spring:
       time-to-live: 1800000
       cache-null-values: false
       use-key-prefix: true
-
-management:
-  endpoint:
-    health:
-      show-details: always
-      show-components: always
 
 logging:
   level:

@@ -1,7 +1,7 @@
 package com.deliverytech.delivery_api.config;
 
-import com.deliverytech.delivery_api.security.JwtAuthenticationFilter;
-import org.springframework.beans.factory.annotation.Autowired;
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -22,43 +22,71 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
-import java.util.List;
+import com.deliverytech.delivery_api.security.JwtAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
 @EnableWebMvc
-@EnableMethodSecurity()
+@EnableMethodSecurity
 public class SecurityConfig {
 
-  @Autowired
-  private JwtAuthenticationFilter jwtAuthenticationFilter;
+  private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
+  public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+  }
+
+  /**
+   * 🔐 Configuração principal de segurança HTTP
+   */
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
     http
-        .cors(Customizer -> Customizer.configurationSource(corsConfigurationSource()))
+        // ✅ CORS + CSRF desabilitado para APIs JWT stateless
+        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .csrf(AbstractHttpConfigurer::disable)
+
+        // ✅ Stateless: não cria sessões HTTP
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+        // ✅ Regras de autorização
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // pré-flight do CORS
+            .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             .requestMatchers(PublicEndpoints.ENDPOINTS).permitAll()
+            // Apenas ADMIN acessa o Actuator
+            .requestMatchers("/actuator/**").hasRole("ADMIN")
+            // Demais rotas exigem autenticação
             .anyRequest().authenticated())
+
+        // ✅ Filtro customizado do JWT
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-        .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable)); // H2 Console
+
+        // ✅ Libera H2 console no navegador
+        .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable));
 
     return http.build();
   }
 
+  /**
+   * 🧩 Criptografia segura de senhas
+   */
   @Bean
   public PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder();
   }
 
+  /**
+   * 🔄 AuthenticationManager central do Spring Security
+   */
   @Bean
   public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
     return config.getAuthenticationManager();
   }
 
+  /**
+   * 🌍 Configuração global de CORS
+   */
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
