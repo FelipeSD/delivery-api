@@ -1,7 +1,6 @@
 package com.deliverytech.delivery_api.services;
 
 import java.math.BigDecimal;
-import java.util.Map;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +21,6 @@ import com.deliverytech.delivery_api.exceptions.ConflictException;
 import com.deliverytech.delivery_api.exceptions.EntityNotFoundException;
 import com.deliverytech.delivery_api.exceptions.InactiveEntityException;
 import com.deliverytech.delivery_api.exceptions.ValidationException;
-import com.deliverytech.delivery_api.monitoring.audit.AuditService;
 import com.deliverytech.delivery_api.repositories.ProdutoRepository;
 import com.deliverytech.delivery_api.repositories.RestauranteRepository;
 import com.deliverytech.delivery_api.security.SecurityUtils;
@@ -34,8 +32,8 @@ import lombok.extern.slf4j.Slf4j;
 @Transactional
 @Service("produtoService")
 public class ProdutoServiceImpl implements ProdutoService {
-  @Autowired
-  private AuditService auditService;
+  // @Autowired
+  // private AuditService auditService;
 
   @Autowired
   private ProdutoRepository produtoRepository;
@@ -85,11 +83,11 @@ public class ProdutoServiceImpl implements ProdutoService {
 
     Produto produtoSalvo = produtoRepository.save(produto);
 
-    auditService.logUserAction(
-        SecurityUtils.getCurrentUserId(),
-        "CRIAR_PRODUTO",
-        "Produto",
-        Map.of("produtoId", produto.getId(), "nome", produto.getNome()));
+    // auditService.logUserAction(
+    //     SecurityUtils.getCurrentUserId(),
+    //     "CRIAR_PRODUTO",
+    //     "Produto",
+    //     Map.of("produtoId", produto.getId(), "nome", produto.getNome()));
 
     log.info("Produto criado com sucesso. ID: {} | Nome: {} | Preço: R$ {}", produtoSalvo.getId(),
         produtoSalvo.getNome(), produtoSalvo.getPreco());

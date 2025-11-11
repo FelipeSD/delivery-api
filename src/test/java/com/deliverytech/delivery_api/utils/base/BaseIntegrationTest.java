@@ -14,6 +14,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -24,13 +25,13 @@ import com.deliverytech.delivery_api.repositories.PedidoRepository;
 import com.deliverytech.delivery_api.repositories.ProdutoRepository;
 import com.deliverytech.delivery_api.repositories.RestauranteRepository;
 import com.deliverytech.delivery_api.repositories.UsuarioRepository;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Import(TestContainersConfig.class)
 public abstract class BaseIntegrationTest {
 
   @Autowired
@@ -73,8 +74,9 @@ public abstract class BaseIntegrationTest {
         .andExpect(status().isOk())
         .andReturn();
 
-    JsonNode json = objectMapper.readTree(resposta.getResponse().getContentAsString());
-    return json.path("data").path("token").asText();
+    String responseBody = resposta.getResponse().getContentAsString();
+
+    return responseBody;
   }
 
   protected <T> String toJson(T obj) throws Exception {

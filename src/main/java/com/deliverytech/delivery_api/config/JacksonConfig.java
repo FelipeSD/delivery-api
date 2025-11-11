@@ -19,9 +19,9 @@ public class JacksonConfig {
     objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
 
     // Adiciona informação de tipo para serialização
-    objectMapper.activateDefaultTyping(
-        objectMapper.getPolymorphicTypeValidator(),
-        ObjectMapper.DefaultTyping.NON_FINAL);
+    // objectMapper.activateDefaultTyping(
+    //     objectMapper.getPolymorphicTypeValidator(),
+    //     ObjectMapper.DefaultTyping.NON_FINAL);
 
     return objectMapper;
   }

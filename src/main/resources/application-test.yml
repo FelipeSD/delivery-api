@@ -1,0 +1,46 @@
+# ==============================
+# ⚙️ CONFIGURAÇÃO DE TESTES
+# ==============================
+
+spring:
+  application:
+    name: delivery-api-test
+
+  datasource:
+    url: jdbc:h2:mem:delivery_test;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+    show-sql: false
+  h2:
+    console:
+      enabled: false
+
+  data:
+    redis:
+      repositories:
+        enabled: true 
+
+  cache:
+    type: redis 
+
+  main:
+    allow-bean-definition-overriding: true
+
+jwt:
+  secret: mySecretKey1234567890123401234567890123456789012345678901234567890
+  expiration: 3600000
+
+logging:
+  level:
+    root: WARN
+    com.deliverytech.delivery_api: DEBUG
+    com.deliverytech.delivery_api.monitoring.audit: INFO
+    org.springframework.security: INFO
+    org.springframework.boot.actuate: INFO

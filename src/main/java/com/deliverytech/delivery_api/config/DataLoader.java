@@ -5,6 +5,7 @@ import java.util.Arrays;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
@@ -21,7 +22,7 @@ import com.deliverytech.delivery_api.repositories.RestauranteRepository;
 import com.deliverytech.delivery_api.repositories.UsuarioRepository;
 
 @Component
-// @Profile({ "dev" })
+@Profile({ "dev" })
 public class DataLoader implements CommandLineRunner {
   @Autowired
   private RestauranteRepository restauranteRepository;
