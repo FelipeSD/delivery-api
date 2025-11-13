@@ -20,11 +20,11 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
-import com.deliverytech.delivery_api.dtos.LoginRequestDTO;
-import com.deliverytech.delivery_api.repositories.PedidoRepository;
-import com.deliverytech.delivery_api.repositories.ProdutoRepository;
-import com.deliverytech.delivery_api.repositories.RestauranteRepository;
-import com.deliverytech.delivery_api.repositories.UsuarioRepository;
+import com.deliverytech.delivery_api.auth.dto.LoginRequestDTO;
+import com.deliverytech.delivery_api.auth.repository.UsuarioRepository;
+import com.deliverytech.delivery_api.pedido.repository.PedidoRepository;
+import com.deliverytech.delivery_api.produto.repository.ProdutoRepository;
+import com.deliverytech.delivery_api.restaurante.repository.RestauranteRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest

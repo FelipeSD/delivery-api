@@ -22,10 +22,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import com.deliverytech.delivery_api.dtos.RegisterRequestDTO;
-import com.deliverytech.delivery_api.entities.Usuario;
-import com.deliverytech.delivery_api.enums.Role;
-import com.deliverytech.delivery_api.repositories.UsuarioRepository;
+import com.deliverytech.delivery_api.auth.dto.RegisterRequestDTO;
+import com.deliverytech.delivery_api.auth.model.Role;
+import com.deliverytech.delivery_api.auth.model.Usuario;
+import com.deliverytech.delivery_api.auth.repository.UsuarioRepository;
+import com.deliverytech.delivery_api.auth.service.AuthService;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("AuthService - Testes Unitários")

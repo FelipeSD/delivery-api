@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.deliverytech.delivery_api.common.validations.TelefoneValidator;
+
 class TelefoneValidatorTest {
 
   private TelefoneValidator validator;

@@ -5,16 +5,16 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.deliverytech.delivery_api.dtos.ItemPedidoDTO;
-import com.deliverytech.delivery_api.dtos.PedidoDTO;
-import com.deliverytech.delivery_api.dtos.ProdutoDTO;
-import com.deliverytech.delivery_api.dtos.RestauranteDTO;
-import com.deliverytech.delivery_api.dtos.StatusPedidoDTO;
-import com.deliverytech.delivery_api.entities.Pedido;
-import com.deliverytech.delivery_api.entities.Produto;
-import com.deliverytech.delivery_api.entities.Restaurante;
-import com.deliverytech.delivery_api.entities.Usuario;
-import com.deliverytech.delivery_api.enums.StatusPedido;
+import com.deliverytech.delivery_api.auth.model.Usuario;
+import com.deliverytech.delivery_api.pedido.dto.PedidoDTO;
+import com.deliverytech.delivery_api.pedido.dto.PedidoItemDTO;
+import com.deliverytech.delivery_api.pedido.dto.PedidoStatusDTO;
+import com.deliverytech.delivery_api.pedido.model.Pedido;
+import com.deliverytech.delivery_api.pedido.model.PedidoStatus;
+import com.deliverytech.delivery_api.produto.dto.ProdutoDTO;
+import com.deliverytech.delivery_api.produto.model.Produto;
+import com.deliverytech.delivery_api.restaurante.dto.RestauranteDTO;
+import com.deliverytech.delivery_api.restaurante.model.Restaurante;
 
 public class EntityFactory {
 
@@ -124,7 +124,7 @@ public class EntityFactory {
     p.setUsuario(usuario);
     p.setRestaurante(restaurante);
     p.setDataPedido(LocalDateTime.now());
-    p.setStatus(StatusPedido.PENDENTE);
+    p.setStatus(PedidoStatus.PENDENTE);
     p.setEnderecoEntrega("Rua A, 123 - São Paulo/SP");
     p.setSubtotal(new BigDecimal("91.80"));
     p.setTaxaEntrega(new BigDecimal("8.50"));
@@ -143,8 +143,8 @@ public class EntityFactory {
     dto.setObservacoes("Por favor, entregar após as 18h");
     dto.setFormaPagamento("PIX");
 
-    List<ItemPedidoDTO> itens = new ArrayList<>();
-    ItemPedidoDTO item = new ItemPedidoDTO();
+    List<PedidoItemDTO> itens = new ArrayList<>();
+    PedidoItemDTO item = new PedidoItemDTO();
     item.setProdutoId(produtoId);
     item.setQuantidade(2);
     itens.add(item);
@@ -161,15 +161,15 @@ public class EntityFactory {
     return dto;
   }
 
-  public static ItemPedidoDTO criarItemPedidoDTO(Long produtoId, Integer quantidade) {
-    ItemPedidoDTO item = new ItemPedidoDTO();
+  public static PedidoItemDTO criarItemPedidoDTO(Long produtoId, Integer quantidade) {
+    PedidoItemDTO item = new PedidoItemDTO();
     item.setProdutoId(produtoId);
     item.setQuantidade(quantidade);
     return item;
   }
 
-  public static StatusPedidoDTO criarStatusPedidoDTO(StatusPedido status) {
-    StatusPedidoDTO dto = new StatusPedidoDTO();
+  public static PedidoStatusDTO criarStatusPedidoDTO(PedidoStatus status) {
+    PedidoStatusDTO dto = new PedidoStatusDTO();
     dto.setStatus(status);
     return dto;
   }

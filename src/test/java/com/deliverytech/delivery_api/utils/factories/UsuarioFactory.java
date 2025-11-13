@@ -1,8 +1,9 @@
 package com.deliverytech.delivery_api.utils.factories;
 
-import com.deliverytech.delivery_api.entities.Restaurante;
-import com.deliverytech.delivery_api.entities.Usuario;
-import com.deliverytech.delivery_api.enums.Role;
+import com.deliverytech.delivery_api.auth.model.Role;
+import com.deliverytech.delivery_api.auth.model.Usuario;
+import com.deliverytech.delivery_api.restaurante.model.Restaurante;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;

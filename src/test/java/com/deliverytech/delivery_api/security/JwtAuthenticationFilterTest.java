@@ -19,9 +19,11 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import com.deliverytech.delivery_api.entities.Usuario;
-import com.deliverytech.delivery_api.enums.Role;
-import com.deliverytech.delivery_api.services.AuthService;
+import com.deliverytech.delivery_api.auth.model.Role;
+import com.deliverytech.delivery_api.auth.model.Usuario;
+import com.deliverytech.delivery_api.auth.service.AuthService;
+import com.deliverytech.delivery_api.common.security.JwtAuthenticationFilter;
+import com.deliverytech.delivery_api.common.security.JwtUtil;
 
 class JwtAuthenticationFilterTest {
 
@@ -54,7 +56,7 @@ class JwtAuthenticationFilterTest {
     var response = new MockHttpServletResponse();
     var chain = spy(new MockFilterChain());
 
-    filter.doFilterInternal(request, response, chain);
+    filter.doFilter(request, response, chain);
 
     verify(chain, times(1)).doFilter(request, response);
     assertNull(SecurityContextHolder.getContext().getAuthentication());
@@ -67,7 +69,7 @@ class JwtAuthenticationFilterTest {
     var response = new MockHttpServletResponse();
     var chain = spy(new MockFilterChain());
 
-    filter.doFilterInternal(request, response, chain);
+    filter.doFilter(request, response, chain);
 
     assertNotNull(SecurityContextHolder.getContext().getAuthentication());
     assertEquals("user@email.com",
@@ -85,7 +87,7 @@ class JwtAuthenticationFilterTest {
     request.addHeader("Authorization", "Bearer " + expiredToken);
     var response = new MockHttpServletResponse();
 
-    filter.doFilterInternal(request, response, new MockFilterChain());
+    filter.doFilter(request, response, new MockFilterChain());
 
     assertEquals(HttpStatus.UNAUTHORIZED.value(), response.getStatus());
     assertTrue(response.getContentAsString().contains("Token expirado"));
@@ -97,7 +99,7 @@ class JwtAuthenticationFilterTest {
     request.addHeader("Authorization", "Bearer token_invalido");
     var response = new MockHttpServletResponse();
 
-    filter.doFilterInternal(request, response, new MockFilterChain());
+    filter.doFilter(request, response, new MockFilterChain());
 
     assertEquals(HttpStatus.UNAUTHORIZED.value(), response.getStatus());
     assertTrue(response.getContentAsString().contains("Token inválido"));

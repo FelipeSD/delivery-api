@@ -1,9 +1,9 @@
 package com.deliverytech.delivery_api.controllers;
 
-import com.deliverytech.delivery_api.dtos.RestauranteDTO;
-import com.deliverytech.delivery_api.entities.Restaurante;
-import com.deliverytech.delivery_api.repositories.RestauranteRepository;
-import com.deliverytech.delivery_api.repositories.UsuarioRepository;
+import com.deliverytech.delivery_api.auth.repository.UsuarioRepository;
+import com.deliverytech.delivery_api.restaurante.dto.RestauranteDTO;
+import com.deliverytech.delivery_api.restaurante.model.Restaurante;
+import com.deliverytech.delivery_api.restaurante.repository.RestauranteRepository;
 import com.deliverytech.delivery_api.utils.base.BaseIntegrationTest;
 import com.deliverytech.delivery_api.utils.factories.EntityFactory;
 import com.deliverytech.delivery_api.utils.factories.UsuarioFactory;

@@ -28,23 +28,24 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
-import com.deliverytech.delivery_api.dtos.ItemPedidoDTO;
-import com.deliverytech.delivery_api.dtos.PedidoDTO;
-import com.deliverytech.delivery_api.dtos.PedidoResponseDTO;
-import com.deliverytech.delivery_api.entities.Pedido;
-import com.deliverytech.delivery_api.entities.Produto;
-import com.deliverytech.delivery_api.entities.Restaurante;
-import com.deliverytech.delivery_api.entities.Usuario;
-import com.deliverytech.delivery_api.enums.StatusPedido;
-import com.deliverytech.delivery_api.exceptions.BusinessException;
-import com.deliverytech.delivery_api.exceptions.EntityNotFoundException;
-import com.deliverytech.delivery_api.exceptions.InactiveEntityException;
-import com.deliverytech.delivery_api.exceptions.OrderStatusException;
-import com.deliverytech.delivery_api.monitoring.metrics.MetricsService;
-import com.deliverytech.delivery_api.repositories.PedidoRepository;
-import com.deliverytech.delivery_api.repositories.ProdutoRepository;
-import com.deliverytech.delivery_api.repositories.RestauranteRepository;
-import com.deliverytech.delivery_api.repositories.UsuarioRepository;
+import com.deliverytech.delivery_api.auth.model.Usuario;
+import com.deliverytech.delivery_api.auth.repository.UsuarioRepository;
+import com.deliverytech.delivery_api.common.exceptions.BusinessException;
+import com.deliverytech.delivery_api.common.exceptions.EntityNotFoundException;
+import com.deliverytech.delivery_api.common.exceptions.InactiveEntityException;
+import com.deliverytech.delivery_api.common.exceptions.OrderStatusException;
+import com.deliverytech.delivery_api.common.monitoring.metrics.MetricsService;
+import com.deliverytech.delivery_api.pedido.dto.PedidoDTO;
+import com.deliverytech.delivery_api.pedido.dto.PedidoItemDTO;
+import com.deliverytech.delivery_api.pedido.dto.PedidoResponseDTO;
+import com.deliverytech.delivery_api.pedido.model.Pedido;
+import com.deliverytech.delivery_api.pedido.model.PedidoStatus;
+import com.deliverytech.delivery_api.pedido.repository.PedidoRepository;
+import com.deliverytech.delivery_api.pedido.service.PedidoServiceImpl;
+import com.deliverytech.delivery_api.produto.model.Produto;
+import com.deliverytech.delivery_api.produto.repository.ProdutoRepository;
+import com.deliverytech.delivery_api.restaurante.model.Restaurante;
+import com.deliverytech.delivery_api.restaurante.repository.RestauranteRepository;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("PedidoServiceImpl - Testes Unitários")
@@ -76,7 +77,7 @@ class PedidoServiceImplTest {
     private Produto produto;
     private Pedido pedido;
     private PedidoDTO pedidoDTO;
-    private ItemPedidoDTO itemPedidoDTO;
+    private PedidoItemDTO itemPedidoDTO;
 
     @BeforeEach
     void setUp() {
@@ -103,7 +104,7 @@ class PedidoServiceImplTest {
         produto.setRestaurante(restaurante);
 
         // Setup ItemPedidoDTO
-        itemPedidoDTO = new ItemPedidoDTO();
+        itemPedidoDTO = new PedidoItemDTO();
         itemPedidoDTO.setProdutoId(1L);
         itemPedidoDTO.setQuantidade(2);
         itemPedidoDTO.setObservacoes("Sem cebola");
@@ -123,7 +124,7 @@ class PedidoServiceImplTest {
         pedido.setNumeroPedido("PED-123456");
         pedido.setUsuario(usuario);
         pedido.setRestaurante(restaurante);
-        pedido.setStatus(StatusPedido.PENDENTE);
+        pedido.setStatus(PedidoStatus.PENDENTE);
         pedido.setSubtotal(BigDecimal.valueOf(60.00));
         pedido.setTaxaEntrega(BigDecimal.valueOf(5.00));
         pedido.setValorTotal(BigDecimal.valueOf(65.00));
@@ -138,7 +139,7 @@ class PedidoServiceImplTest {
         when(produtoRepository.findById(1L)).thenReturn(Optional.of(produto));
         when(pedidoRepository.save(any(Pedido.class))).thenReturn(pedido);
         when(modelMapper.map(any(Pedido.class), eq(PedidoResponseDTO.class)))
-            .thenReturn(new PedidoResponseDTO());
+                .thenReturn(new PedidoResponseDTO());
 
         PedidoResponseDTO result = pedidoService.criarPedido(pedidoDTO);
 
@@ -155,8 +156,8 @@ class PedidoServiceImplTest {
     void deveLancarExcecaoAoCriarPedidoComUsuarioInexistente() {
         when(usuarioRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThrows(EntityNotFoundException.class, 
-            () -> pedidoService.criarPedido(pedidoDTO));
+        assertThrows(EntityNotFoundException.class,
+                () -> pedidoService.criarPedido(pedidoDTO));
         verify(usuarioRepository).findById(1L);
         verify(pedidoRepository, never()).save(any());
     }
@@ -167,8 +168,8 @@ class PedidoServiceImplTest {
         usuario.setAtivo(false);
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
 
-        assertThrows(InactiveEntityException.class, 
-            () -> pedidoService.criarPedido(pedidoDTO));
+        assertThrows(InactiveEntityException.class,
+                () -> pedidoService.criarPedido(pedidoDTO));
         verify(usuarioRepository).findById(1L);
         verify(pedidoRepository, never()).save(any());
     }
@@ -179,8 +180,8 @@ class PedidoServiceImplTest {
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
         when(restauranteRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThrows(EntityNotFoundException.class, 
-            () -> pedidoService.criarPedido(pedidoDTO));
+        assertThrows(EntityNotFoundException.class,
+                () -> pedidoService.criarPedido(pedidoDTO));
         verify(restauranteRepository).findById(1L);
         verify(pedidoRepository, never()).save(any());
     }
@@ -192,8 +193,8 @@ class PedidoServiceImplTest {
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
         when(restauranteRepository.findById(1L)).thenReturn(Optional.of(restaurante));
 
-        assertThrows(InactiveEntityException.class, 
-            () -> pedidoService.criarPedido(pedidoDTO));
+        assertThrows(InactiveEntityException.class,
+                () -> pedidoService.criarPedido(pedidoDTO));
         verify(pedidoRepository, never()).save(any());
     }
 
@@ -204,8 +205,8 @@ class PedidoServiceImplTest {
         when(restauranteRepository.findById(1L)).thenReturn(Optional.of(restaurante));
         when(produtoRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThrows(EntityNotFoundException.class, 
-            () -> pedidoService.criarPedido(pedidoDTO));
+        assertThrows(EntityNotFoundException.class,
+                () -> pedidoService.criarPedido(pedidoDTO));
         verify(produtoRepository).findById(1L);
         verify(pedidoRepository, never()).save(any());
     }
@@ -218,8 +219,8 @@ class PedidoServiceImplTest {
         when(restauranteRepository.findById(1L)).thenReturn(Optional.of(restaurante));
         when(produtoRepository.findById(1L)).thenReturn(Optional.of(produto));
 
-        assertThrows(BusinessException.class, 
-            () -> pedidoService.criarPedido(pedidoDTO));
+        assertThrows(BusinessException.class,
+                () -> pedidoService.criarPedido(pedidoDTO));
         verify(pedidoRepository, never()).save(any());
     }
 
@@ -234,8 +235,8 @@ class PedidoServiceImplTest {
         when(restauranteRepository.findById(1L)).thenReturn(Optional.of(restaurante));
         when(produtoRepository.findById(1L)).thenReturn(Optional.of(produto));
 
-        assertThrows(BusinessException.class, 
-            () -> pedidoService.criarPedido(pedidoDTO));
+        assertThrows(BusinessException.class,
+                () -> pedidoService.criarPedido(pedidoDTO));
         verify(pedidoRepository, never()).save(any());
     }
 
@@ -244,7 +245,7 @@ class PedidoServiceImplTest {
     void deveBuscarPedidoPorId() {
         when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
         when(modelMapper.map(pedido, PedidoResponseDTO.class))
-            .thenReturn(new PedidoResponseDTO());
+                .thenReturn(new PedidoResponseDTO());
 
         PedidoResponseDTO result = pedidoService.buscarPedidoPorId(1L);
 
@@ -257,8 +258,8 @@ class PedidoServiceImplTest {
     void deveLancarExcecaoAoBuscarPedidoInexistente() {
         when(pedidoRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThrows(EntityNotFoundException.class, 
-            () -> pedidoService.buscarPedidoPorId(1L));
+        assertThrows(EntityNotFoundException.class,
+                () -> pedidoService.buscarPedidoPorId(1L));
         verify(pedidoRepository).findById(1L);
     }
 
@@ -268,9 +269,9 @@ class PedidoServiceImplTest {
         when(usuarioRepository.existsById(1L)).thenReturn(true);
         Page<Pedido> page = new PageImpl<>(Arrays.asList(pedido));
         when(pedidoRepository.findByUsuarioIdOrderByDataPedidoDesc(eq(1L), any(Pageable.class)))
-            .thenReturn(page);
+                .thenReturn(page);
         when(modelMapper.map(any(Pedido.class), eq(PedidoResponseDTO.class)))
-            .thenReturn(new PedidoResponseDTO());
+                .thenReturn(new PedidoResponseDTO());
 
         Page<PedidoResponseDTO> result = pedidoService.buscarPedidosPorUsuario(1L, Pageable.unpaged());
 
@@ -284,8 +285,8 @@ class PedidoServiceImplTest {
     void deveLancarExcecaoAoBuscarPedidosDeUsuarioInexistente() {
         when(usuarioRepository.existsById(1L)).thenReturn(false);
 
-        assertThrows(EntityNotFoundException.class, 
-            () -> pedidoService.buscarPedidosPorUsuario(1L, Pageable.unpaged()));
+        assertThrows(EntityNotFoundException.class,
+                () -> pedidoService.buscarPedidosPorUsuario(1L, Pageable.unpaged()));
         verify(usuarioRepository).existsById(1L);
     }
 
@@ -295,9 +296,9 @@ class PedidoServiceImplTest {
         when(restauranteRepository.existsById(1L)).thenReturn(true);
         Page<Pedido> page = new PageImpl<>(Arrays.asList(pedido));
         when(pedidoRepository.findByRestauranteIdOrderByDataPedidoDesc(eq(1L), any(Pageable.class)))
-            .thenReturn(page);
+                .thenReturn(page);
         when(modelMapper.map(any(Pedido.class), eq(PedidoResponseDTO.class)))
-            .thenReturn(new PedidoResponseDTO());
+                .thenReturn(new PedidoResponseDTO());
 
         Page<PedidoResponseDTO> result = pedidoService.buscarPedidosPorRestaurante(1L, Pageable.unpaged());
 
@@ -312,9 +313,9 @@ class PedidoServiceImplTest {
         when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
         when(pedidoRepository.save(any(Pedido.class))).thenReturn(pedido);
         when(modelMapper.map(pedido, PedidoResponseDTO.class))
-            .thenReturn(new PedidoResponseDTO());
+                .thenReturn(new PedidoResponseDTO());
 
-        PedidoResponseDTO result = pedidoService.atualizarStatusPedido(1L, StatusPedido.CONFIRMADO);
+        PedidoResponseDTO result = pedidoService.atualizarStatusPedido(1L, PedidoStatus.CONFIRMADO);
 
         assertNotNull(result);
         verify(pedidoRepository).findById(1L);
@@ -324,11 +325,11 @@ class PedidoServiceImplTest {
     @Test
     @DisplayName("Deve lançar exceção ao atualizar status inválido")
     void deveLancarExcecaoAoAtualizarStatusInvalido() {
-        pedido.setStatus(StatusPedido.ENTREGUE);
+        pedido.setStatus(PedidoStatus.ENTREGUE);
         when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
 
-        assertThrows(OrderStatusException.class, 
-            () -> pedidoService.atualizarStatusPedido(1L, StatusPedido.CONFIRMADO));
+        assertThrows(OrderStatusException.class,
+                () -> pedidoService.atualizarStatusPedido(1L, PedidoStatus.CONFIRMADO));
         verify(pedidoRepository).findById(1L);
         verify(pedidoRepository, never()).save(any());
     }
@@ -336,7 +337,7 @@ class PedidoServiceImplTest {
     @Test
     @DisplayName("Deve calcular total do pedido corretamente")
     void deveCalcularTotalDoPedido() {
-        List<ItemPedidoDTO> itens = Arrays.asList(itemPedidoDTO);
+        List<PedidoItemDTO> itens = Arrays.asList(itemPedidoDTO);
         when(produtoRepository.findById(1L)).thenReturn(Optional.of(produto));
 
         BigDecimal total = pedidoService.calcularTotalPedido(itens);
@@ -360,11 +361,11 @@ class PedidoServiceImplTest {
     @Test
     @DisplayName("Deve lançar exceção ao cancelar pedido com status inválido")
     void deveLancarExcecaoAoCancelarPedidoComStatusInvalido() {
-        pedido.setStatus(StatusPedido.ENTREGUE);
+        pedido.setStatus(PedidoStatus.ENTREGUE);
         when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
 
-        assertThrows(OrderStatusException.class, 
-            () -> pedidoService.cancelarPedido(1L));
+        assertThrows(OrderStatusException.class,
+                () -> pedidoService.cancelarPedido(1L));
         verify(pedidoRepository).findById(1L);
         verify(pedidoRepository, never()).save(any());
     }

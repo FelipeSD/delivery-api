@@ -20,18 +20,18 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.deliverytech.delivery_api.dtos.ItemPedidoDTO;
-import com.deliverytech.delivery_api.dtos.PedidoDTO;
-import com.deliverytech.delivery_api.dtos.StatusPedidoDTO;
-import com.deliverytech.delivery_api.entities.Pedido;
-import com.deliverytech.delivery_api.entities.Produto;
-import com.deliverytech.delivery_api.entities.Restaurante;
-import com.deliverytech.delivery_api.entities.Usuario;
-import com.deliverytech.delivery_api.enums.StatusPedido;
-import com.deliverytech.delivery_api.repositories.PedidoRepository;
-import com.deliverytech.delivery_api.repositories.ProdutoRepository;
-import com.deliverytech.delivery_api.repositories.RestauranteRepository;
-import com.deliverytech.delivery_api.repositories.UsuarioRepository;
+import com.deliverytech.delivery_api.auth.model.Usuario;
+import com.deliverytech.delivery_api.auth.repository.UsuarioRepository;
+import com.deliverytech.delivery_api.pedido.dto.PedidoDTO;
+import com.deliverytech.delivery_api.pedido.dto.PedidoItemDTO;
+import com.deliverytech.delivery_api.pedido.dto.PedidoStatusDTO;
+import com.deliverytech.delivery_api.pedido.model.Pedido;
+import com.deliverytech.delivery_api.pedido.model.PedidoStatus;
+import com.deliverytech.delivery_api.pedido.repository.PedidoRepository;
+import com.deliverytech.delivery_api.produto.model.Produto;
+import com.deliverytech.delivery_api.produto.repository.ProdutoRepository;
+import com.deliverytech.delivery_api.restaurante.model.Restaurante;
+import com.deliverytech.delivery_api.restaurante.repository.RestauranteRepository;
 import com.deliverytech.delivery_api.utils.base.BaseIntegrationTest;
 import com.deliverytech.delivery_api.utils.factories.EntityFactory;
 import com.deliverytech.delivery_api.utils.factories.UsuarioFactory;
@@ -84,7 +84,8 @@ class PedidoControllerIT extends BaseIntegrationTest {
     // 3. Criar usuário do restaurante (após restaurante existir)
     var usuarioRestaurante = usuarioRepository.save(usuarioFactory.criarUsuarioRestaurante(restauranteSalvo));
 
-    assertEquals(restauranteSalvo.getId(), usuarioRestaurante.getRestaurante().getId(), "Usuário do restaurante não está correto");
+    assertEquals(restauranteSalvo.getId(), usuarioRestaurante.getRestaurante().getId(),
+        "Usuário do restaurante não está correto");
 
     // 4. Criar produto (após restaurante existir)
     produtoSalvo = produtoRepository.save(EntityFactory.criarProduto(restauranteSalvo));
@@ -233,7 +234,7 @@ class PedidoControllerIT extends BaseIntegrationTest {
 
   @Test
   void deveAtualizarStatusDoPedido() throws Exception {
-    StatusPedidoDTO statusDTO = EntityFactory.criarStatusPedidoDTO(StatusPedido.CONFIRMADO);
+    PedidoStatusDTO statusDTO = EntityFactory.criarStatusPedidoDTO(PedidoStatus.CONFIRMADO);
 
     patchJson("/api/pedidos/{id}/status", restauranteJwtToken, statusDTO, pedidoSalvo.getId())
         .andDo(print())
@@ -246,7 +247,7 @@ class PedidoControllerIT extends BaseIntegrationTest {
   @Test
   void deveRejeitarTransicaoDeStatusInvalida() throws Exception {
     // Tentar mudar de PENDENTE direto para ENTREGUE (transição inválida)
-    StatusPedidoDTO statusDTO = EntityFactory.criarStatusPedidoDTO(StatusPedido.ENTREGUE);
+    PedidoStatusDTO statusDTO = EntityFactory.criarStatusPedidoDTO(PedidoStatus.ENTREGUE);
 
     patchJson("/api/pedidos/{id}/status", restauranteJwtToken, statusDTO, pedidoSalvo.getId())
         .andDo(print())
@@ -258,19 +259,19 @@ class PedidoControllerIT extends BaseIntegrationTest {
   @Test
   void devePermitirTransicaoDeStatusValida() throws Exception {
     // PENDENTE -> CONFIRMADO
-    StatusPedidoDTO statusDTO1 = EntityFactory.criarStatusPedidoDTO(StatusPedido.CONFIRMADO);
+    PedidoStatusDTO statusDTO1 = EntityFactory.criarStatusPedidoDTO(PedidoStatus.CONFIRMADO);
     patchJson("/api/pedidos/{id}/status", restauranteJwtToken, statusDTO1, pedidoSalvo.getId())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data.status").value("CONFIRMADO"));
 
     // CONFIRMADO -> PREPARANDO
-    StatusPedidoDTO statusDTO2 = EntityFactory.criarStatusPedidoDTO(StatusPedido.PREPARANDO);
+    PedidoStatusDTO statusDTO2 = EntityFactory.criarStatusPedidoDTO(PedidoStatus.PREPARANDO);
     patchJson("/api/pedidos/{id}/status", restauranteJwtToken, statusDTO2, pedidoSalvo.getId())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data.status").value("PREPARANDO"));
 
     // EM_PREPARO -> SAIU_PARA_ENTREGA
-    StatusPedidoDTO statusDTO3 = EntityFactory.criarStatusPedidoDTO(StatusPedido.SAIU_PARA_ENTREGA);
+    PedidoStatusDTO statusDTO3 = EntityFactory.criarStatusPedidoDTO(PedidoStatus.SAIU_PARA_ENTREGA);
     patchJson("/api/pedidos/{id}/status", restauranteJwtToken, statusDTO3, pedidoSalvo.getId())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data.status").value("SAIU_PARA_ENTREGA"));
@@ -291,7 +292,7 @@ class PedidoControllerIT extends BaseIntegrationTest {
   @Test
   void deveRejeitarCancelamentoDePedidoEmAndamento() throws Exception {
     // Atualizar status para SAIU_PARA_ENTREGA
-    pedidoSalvo.setStatus(StatusPedido.SAIU_PARA_ENTREGA);
+    pedidoSalvo.setStatus(PedidoStatus.SAIU_PARA_ENTREGA);
     pedidoRepository.save(pedidoSalvo);
 
     deleteJson("/api/pedidos/{id}", clienteJwtToken, pedidoSalvo.getId())
@@ -304,7 +305,7 @@ class PedidoControllerIT extends BaseIntegrationTest {
   @Test
   void deveRejeitarCancelamentoDePedidoJaCancelado() throws Exception {
     // Cancelar pedido
-    pedidoSalvo.setStatus(StatusPedido.CANCELADO);
+    pedidoSalvo.setStatus(PedidoStatus.CANCELADO);
     pedidoRepository.save(pedidoSalvo);
 
     deleteJson("/api/pedidos/{id}", clienteJwtToken, pedidoSalvo.getId())
@@ -315,7 +316,7 @@ class PedidoControllerIT extends BaseIntegrationTest {
 
   @Test
   void deveCalcularTotalDoPedido() throws Exception {
-    List<ItemPedidoDTO> itens = new ArrayList<>();
+    List<PedidoItemDTO> itens = new ArrayList<>();
     itens.add(EntityFactory.criarItemPedidoDTO(produtoSalvo.getId(), QUANTIDADE));
 
     postJson("/api/pedidos/calcular", clienteJwtToken, itens)
@@ -337,7 +338,7 @@ class PedidoControllerIT extends BaseIntegrationTest {
     produto2.setDisponivel(true);
     produto2 = produtoRepository.save(produto2);
 
-    List<ItemPedidoDTO> itens = new ArrayList<>();
+    List<PedidoItemDTO> itens = new ArrayList<>();
     itens.add(EntityFactory.criarItemPedidoDTO(produtoSalvo.getId(), 2)); // 91.80
     itens.add(EntityFactory.criarItemPedidoDTO(produto2.getId(), 1)); // 39.90
 
@@ -349,7 +350,7 @@ class PedidoControllerIT extends BaseIntegrationTest {
 
   @Test
   void deveRetornarErroAoCalcularTotalComProdutoInexistente() throws Exception {
-    List<ItemPedidoDTO> itens = new ArrayList<>();
+    List<PedidoItemDTO> itens = new ArrayList<>();
     itens.add(EntityFactory.criarItemPedidoDTO(999L, 2));
 
     postJson("/api/pedidos/calcular", clienteJwtToken, itens)
@@ -400,11 +401,11 @@ class PedidoControllerIT extends BaseIntegrationTest {
   void deveRetornarHistoricoDePedidosDoUsuario() throws Exception {
     // Criar mais pedidos com diferentes status
     Pedido pedido2 = EntityFactory.criarPedido(usuarioSalvo, restauranteSalvo);
-    pedido2.setStatus(StatusPedido.ENTREGUE);
+    pedido2.setStatus(PedidoStatus.ENTREGUE);
     pedidoRepository.save(pedido2);
 
     Pedido pedido3 = EntityFactory.criarPedido(usuarioSalvo, restauranteSalvo);
-    pedido3.setStatus(StatusPedido.CANCELADO);
+    pedido3.setStatus(PedidoStatus.CANCELADO);
     pedidoRepository.save(pedido3);
 
     Map<String, String> params = new HashMap<>();
@@ -422,7 +423,7 @@ class PedidoControllerIT extends BaseIntegrationTest {
 
   @Test
   void deveRetornar404AoAtualizarStatusDePedidoInexistente() throws Exception {
-    StatusPedidoDTO statusDTO = EntityFactory.criarStatusPedidoDTO(StatusPedido.CONFIRMADO);
+    PedidoStatusDTO statusDTO = EntityFactory.criarStatusPedidoDTO(PedidoStatus.CONFIRMADO);
 
     patchJson("/api/pedidos/{id}/status", restauranteJwtToken, statusDTO, 999L)
         .andExpect(status().isNotFound())

@@ -18,12 +18,12 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.deliverytech.delivery_api.dtos.ProdutoDTO;
-import com.deliverytech.delivery_api.entities.Produto;
-import com.deliverytech.delivery_api.entities.Restaurante;
-import com.deliverytech.delivery_api.repositories.ProdutoRepository;
-import com.deliverytech.delivery_api.repositories.RestauranteRepository;
-import com.deliverytech.delivery_api.repositories.UsuarioRepository;
+import com.deliverytech.delivery_api.auth.repository.UsuarioRepository;
+import com.deliverytech.delivery_api.produto.dto.ProdutoDTO;
+import com.deliverytech.delivery_api.produto.model.Produto;
+import com.deliverytech.delivery_api.produto.repository.ProdutoRepository;
+import com.deliverytech.delivery_api.restaurante.model.Restaurante;
+import com.deliverytech.delivery_api.restaurante.repository.RestauranteRepository;
 import com.deliverytech.delivery_api.utils.base.BaseIntegrationTest;
 import com.deliverytech.delivery_api.utils.factories.EntityFactory;
 import com.deliverytech.delivery_api.utils.factories.UsuarioFactory;

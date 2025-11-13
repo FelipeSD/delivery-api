@@ -27,17 +27,18 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
-import com.deliverytech.delivery_api.dtos.ProdutoDTO;
-import com.deliverytech.delivery_api.dtos.ProdutoFiltroDTO;
-import com.deliverytech.delivery_api.dtos.ProdutoResponseDTO;
-import com.deliverytech.delivery_api.entities.Produto;
-import com.deliverytech.delivery_api.entities.Restaurante;
-import com.deliverytech.delivery_api.exceptions.ConflictException;
-import com.deliverytech.delivery_api.exceptions.EntityNotFoundException;
-import com.deliverytech.delivery_api.exceptions.InactiveEntityException;
-import com.deliverytech.delivery_api.exceptions.ValidationException;
-import com.deliverytech.delivery_api.repositories.ProdutoRepository;
-import com.deliverytech.delivery_api.repositories.RestauranteRepository;
+import com.deliverytech.delivery_api.common.exceptions.ConflictException;
+import com.deliverytech.delivery_api.common.exceptions.EntityNotFoundException;
+import com.deliverytech.delivery_api.common.exceptions.InactiveEntityException;
+import com.deliverytech.delivery_api.common.exceptions.ValidationException;
+import com.deliverytech.delivery_api.produto.dto.ProdutoDTO;
+import com.deliverytech.delivery_api.produto.dto.ProdutoFiltroDTO;
+import com.deliverytech.delivery_api.produto.dto.ProdutoResponseDTO;
+import com.deliverytech.delivery_api.produto.model.Produto;
+import com.deliverytech.delivery_api.produto.repository.ProdutoRepository;
+import com.deliverytech.delivery_api.produto.service.ProdutoServiceImpl;
+import com.deliverytech.delivery_api.restaurante.model.Restaurante;
+import com.deliverytech.delivery_api.restaurante.repository.RestauranteRepository;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ProdutoServiceImpl - Testes Unitários")

@@ -1,0 +1,298 @@
+package com.deliverytech.delivery_api.restaurante.service;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Primary;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.deliverytech.delivery_api.common.exceptions.ConflictException;
+import com.deliverytech.delivery_api.common.exceptions.EntityNotFoundException;
+import com.deliverytech.delivery_api.common.exceptions.ValidationException;
+import com.deliverytech.delivery_api.common.security.SecurityUtils;
+import com.deliverytech.delivery_api.produto.dto.ProdutoResponseDTO;
+import com.deliverytech.delivery_api.produto.model.Produto;
+import com.deliverytech.delivery_api.produto.repository.ProdutoRepository;
+import com.deliverytech.delivery_api.restaurante.dto.RestauranteDTO;
+import com.deliverytech.delivery_api.restaurante.dto.RestauranteResponseDTO;
+import com.deliverytech.delivery_api.restaurante.dto.TaxaEntregaResponseDTO;
+import com.deliverytech.delivery_api.restaurante.model.Restaurante;
+import com.deliverytech.delivery_api.restaurante.repository.RestauranteRepository;
+
+@Service("restauranteService")
+@Primary
+public class RestauranteServiceImpl implements RestauranteService {
+  @Autowired
+  private RestauranteRepository restauranteRepository;
+
+  @Autowired
+  private ProdutoRepository produtoRepository;
+
+  @Autowired
+  private ModelMapper modelMapper;
+
+  @Override
+  @Transactional
+  public RestauranteResponseDTO cadastrar(RestauranteDTO restauranteDTO) {
+    validarDadosRestaurante(restauranteDTO);
+
+    if (restauranteRepository.existsByEmail(restauranteDTO.getEmail())) {
+      throw new ConflictException("Restaurante", "email");
+    }
+
+    if (restauranteRepository.existsByCnpj(restauranteDTO.getCnpj())) {
+      throw new ConflictException("Restaurante", "CNPJ");
+    }
+
+    Restaurante restaurante = new Restaurante();
+    restaurante.setNome(restauranteDTO.getNome());
+    restaurante.setTelefone(restauranteDTO.getTelefone());
+    restaurante.setCategoria(restauranteDTO.getCategoria());
+    restaurante.setCnpj(restauranteDTO.getCnpj());
+    restaurante.setEmail(restauranteDTO.getEmail());
+    restaurante.setTaxaEntrega(restauranteDTO.getTaxaEntrega());
+    restaurante.setEndereco(restauranteDTO.getEndereco());
+    restaurante.setCidade(restauranteDTO.getCidade());
+    restaurante.setEstado(restauranteDTO.getEstado());
+    restaurante.setCep(restauranteDTO.getCep());
+    restaurante.setTempoEntregaMin(restauranteDTO.getTempoEntregaMin());
+    restaurante.setTempoEntregaMax(restauranteDTO.getTempoEntregaMax());
+    restaurante.setAtivo(true);
+
+    Restaurante restauranteSalvo = restauranteRepository.save(restaurante);
+
+    return converterParaResponseDTO(restauranteSalvo);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public RestauranteResponseDTO buscarPorId(Long id) {
+    Restaurante restaurante = restauranteRepository.findById(id)
+        .orElseThrow(() -> new EntityNotFoundException("Restaurante", id));
+
+    return converterParaResponseDTO(restaurante);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Page<RestauranteResponseDTO> listarDisponiveis(Pageable pageable) {
+    Page<Restaurante> restaurantes = restauranteRepository.findByAtivoTrue(pageable);
+    return restaurantes.map(this::converterParaResponseDTO);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Page<RestauranteResponseDTO> listarPorCategoria(String categoria, Pageable pageable) {
+    if (categoria == null || categoria.trim().isEmpty()) {
+      throw new ValidationException("Categoria não pode ser vazia");
+    }
+
+    Page<Restaurante> restaurantes = restauranteRepository.findByCategoriaAndAtivoTrue(categoria, pageable);
+
+    return restaurantes.map(this::converterParaResponseDTO);
+  }
+
+  @Override
+  @Transactional
+  public RestauranteResponseDTO atualizar(Long id, RestauranteDTO restauranteDTO) {
+    // 1. Buscar restaurante existente
+    Restaurante restaurante = restauranteRepository.findById(id)
+        .orElseThrow(() -> new EntityNotFoundException("Restaurante", id));
+
+    // 2. Validar dados
+    validarDadosRestaurante(restauranteDTO);
+
+    // 3. Atualizar campos
+    restaurante.setNome(restauranteDTO.getNome());
+    restaurante.setTelefone(restauranteDTO.getTelefone());
+    restaurante.setCategoria(restauranteDTO.getCategoria());
+    restaurante.setTaxaEntrega(restauranteDTO.getTaxaEntrega());
+    restaurante.setTempoEntregaMin(restauranteDTO.getTempoEntregaMin());
+    restaurante.setTempoEntregaMax(restauranteDTO.getTempoEntregaMax());
+    restaurante.setEndereco(restauranteDTO.getEndereco());
+    restaurante.setCidade(restauranteDTO.getCidade());
+    restaurante.setEstado(restauranteDTO.getEstado());
+    restaurante.setCep(restauranteDTO.getCep());
+
+    Restaurante restauranteAtualizado = restauranteRepository.save(restaurante);
+
+    return converterParaResponseDTO(restauranteAtualizado);
+  }
+
+  @Override
+  @Transactional
+  public RestauranteResponseDTO alterarStatus(Long id, boolean ativo) {
+    Restaurante restaurante = restauranteRepository.findById(id)
+        .orElseThrow(() -> new EntityNotFoundException("Restaurante", id));
+
+    // Se está desativando, verificar se há pedidos pendentes
+    if (!ativo && restaurante.isAtivo()) {
+      // Aqui você pode adicionar validação de pedidos pendentes se necessário
+      // Por exemplo: verificar se há pedidos em andamento
+    }
+
+    restaurante.setAtivo(ativo);
+    Restaurante restauranteAtualizado = restauranteRepository.save(restaurante);
+
+    return converterParaResponseDTO(restauranteAtualizado);
+  }
+
+  @Override
+  @Transactional
+  public RestauranteResponseDTO alterarStatus(Long id) {
+    Restaurante r = restauranteRepository.findById(id)
+        .orElseThrow(() -> new EntityNotFoundException("Restaurante", id));
+    r.setAtivo(!r.isAtivo());
+    Restaurante atualizado = restauranteRepository.save(r);
+    return converterParaResponseDTO(atualizado);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public TaxaEntregaResponseDTO calcularTaxaEntrega(Long id, String cep) {
+    // 1. Buscar restaurante
+    Restaurante restaurante = restauranteRepository.findById(id)
+        .orElseThrow(() -> new EntityNotFoundException("Restaurante", id));
+
+    if (!restaurante.isAtivo()) {
+      throw new ValidationException("Restaurante não está disponível");
+    }
+
+    // 2. Validar CEP
+    if (cep == null || cep.trim().isEmpty()) {
+      throw new ValidationException("CEP é obrigatório");
+    }
+
+    String cepLimpo = cep.replaceAll("[^0-9]", "");
+    if (cepLimpo.length() != 8) {
+      throw new ValidationException("CEP inválido");
+    }
+
+    // 3. Calcular taxa (simulação - em produção seria integração com API de
+    // geolocalização)
+    TaxaEntregaResponseDTO response = new TaxaEntregaResponseDTO();
+    response.setRestauranteId(restaurante.getId());
+    response.setRestauranteNome(restaurante.getNome());
+    response.setCep(cep);
+    response.setTaxaEntrega(restaurante.getTaxaEntrega());
+
+    // Simulação de cálculo de distância e tempo
+    // Em produção: integrar com Google Maps API, ViaCEP, etc.
+    Double distanciaSimulada = calcularDistanciaSimulada(restaurante.getCep(), cepLimpo);
+    response.setDistanciaKm(distanciaSimulada);
+
+    Integer tempoEstimado = calcularTempoEstimado(distanciaSimulada,
+        restaurante.getTempoEntregaMin(), restaurante.getTempoEntregaMax());
+    response.setTempoEstimadoMinutos(tempoEstimado);
+
+    return response;
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Page<RestauranteResponseDTO> buscarPorNome(String nome, Pageable pageable) {
+    if (nome == null || nome.trim().isEmpty()) {
+      throw new ValidationException("Nome para busca não pode ser vazio");
+    }
+
+    Page<Restaurante> restaurantes = restauranteRepository
+        .findByNomeContainingIgnoreCaseAndAtivoTrue(nome, pageable);
+
+    return restaurantes.map(this::converterParaResponseDTO);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public RestauranteResponseDTO buscarComProdutos(Long id) {
+    Restaurante restaurante = restauranteRepository.findById(id)
+        .orElseThrow(() -> new EntityNotFoundException("Restaurante", id));
+
+    RestauranteResponseDTO response = converterParaResponseDTO(restaurante);
+
+    // Buscar produtos do restaurante
+    Page<Produto> produtos = produtoRepository.findByRestauranteIdAndDisponivelTrue(id, Pageable.unpaged());
+
+    List<ProdutoResponseDTO> produtosDTO = produtos.stream()
+        .map(produto -> {
+          ProdutoResponseDTO dto = modelMapper.map(produto, ProdutoResponseDTO.class);
+          dto.setRestauranteId(restaurante.getId());
+          dto.setRestauranteNome(restaurante.getNome());
+          return dto;
+        })
+        .collect(Collectors.toList());
+
+    response.setProdutos(produtosDTO);
+
+    return response;
+  }
+
+  // ==================== MÉTODOS AUXILIARES ====================
+
+  private void validarDadosRestaurante(RestauranteDTO restauranteDTO) {
+    if (restauranteDTO.getNome() == null || restauranteDTO.getNome().trim().isEmpty()) {
+      throw new ValidationException("Nome do restaurante é obrigatório");
+    }
+
+    if (restauranteDTO.getCnpj() == null || restauranteDTO.getCnpj().trim().isEmpty()) {
+      throw new ValidationException("CNPJ é obrigatório");
+    }
+
+    if (restauranteDTO.getEmail() == null || restauranteDTO.getEmail().trim().isEmpty()) {
+      throw new ValidationException("Email é obrigatório");
+    }
+
+    if (restauranteDTO.getTaxaEntrega() == null ||
+        restauranteDTO.getTaxaEntrega().compareTo(BigDecimal.ZERO) < 0) {
+      throw new ValidationException("Taxa de entrega inválida");
+    }
+
+    if (restauranteDTO.getCategoria() == null || restauranteDTO.getCategoria().trim().isEmpty()) {
+      throw new ValidationException("Categoria é obrigatória");
+    }
+  }
+
+  private Double calcularDistanciaSimulada(String cepOrigem, String cepDestino) {
+    // Simulação simples - em produção usar API de geolocalização
+    // Calcula diferença entre CEPs e simula distância
+    try {
+      int cep1 = Integer.parseInt(cepOrigem.replaceAll("[^0-9]", ""));
+      int cep2 = Integer.parseInt(cepDestino);
+      int diferenca = Math.abs(cep1 - cep2);
+
+      // Cada 1000 de diferença no CEP = ~1km (muito simplificado)
+      return Math.min(diferenca / 1000.0, 50.0); // máximo 50km
+    } catch (Exception e) {
+      return 5.0; // distância padrão em caso de erro
+    }
+  }
+
+  private Integer calcularTempoEstimado(Double distanciaKm, Integer tempoMin, Integer tempoMax) {
+    // Tempo base de preparo
+    int tempoBase = (tempoMin != null && tempoMax != null)
+        ? (tempoMin + tempoMax) / 2
+        : 30; // 30 minutos padrão
+
+    // Tempo de deslocamento: ~2 minutos por km (velocidade média 30 km/h)
+    int tempoDeslocamento = (int) (distanciaKm * 2);
+
+    return tempoBase + tempoDeslocamento;
+  }
+
+  private RestauranteResponseDTO converterParaResponseDTO(Restaurante restaurante) {
+    return modelMapper.map(restaurante, RestauranteResponseDTO.class);
+  }
+
+  @Override
+  public boolean isOwner(Long restauranteId) {
+    Long usuarioId = SecurityUtils.getCurrentUserId();
+    if (usuarioId == null)
+      return false;
+    return restauranteRepository.existsByIdAndUsuarios_Id(restauranteId, usuarioId);
+  }
+}
